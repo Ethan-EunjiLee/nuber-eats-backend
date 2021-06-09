@@ -11,7 +11,7 @@ import { RestaurantsModule } from './restaurants/restaurants.module';
     ConfigModule.forRoot({
       isGlobal: true, // * isGlobal: 우리 어플리케이션 어디에서나 config모듈에 접근할 수 있니?
       // * envFilePath: '.env', // * envFilePath: configModule이 읽어야 할 환경변수 위치 설정 -> .env라고만 해도 알아서 읽어온다.
-      envFilePath: process.env.ENV === 'dev' ? '.env.dev' : '.env.test',
+      envFilePath: process.env.NODE_ENV === 'dev' ? '.env.dev' : '.env.test',
       /**
        * * cross-env를 이용해 어플리케이션이 실행될 때, dev를 ENV로 넣어주었다!
        * * process.env.NDOE_ENV => 처음 시작할 때 ENV라는 변수가...
