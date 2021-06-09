@@ -2,6 +2,8 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
+// TODO: Notion 네모박스 처리하기 
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
