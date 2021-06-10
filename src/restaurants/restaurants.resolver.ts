@@ -1,6 +1,8 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CreateRestaurantDto } from './dtos/create-restaurant.dto';
+import { UpdateRestaurantDto } from './dtos/update-restaurant.dto';
 import { Restaurant } from './entities/restaurant.entity';
+import { RestaurantService } from './restaurants.service';
 
 /**
  * ! 테스트 Resolver
@@ -12,6 +14,8 @@ import { Restaurant } from './entities/restaurant.entity';
  */
 @Resolver((of) => Restaurant)
 export class RestaurnatResolver {
+  // TypeORM Repository 활용을 위해 restaurantsService 객체 inject
+  constructor(private readonly restaurantService: RestaurantService) {}
   /**
    * * [설명]
    * * @Query(ReturnTypeFunc인 typeFunc 입력 필수!): Method Decorator
@@ -35,15 +39,20 @@ export class RestaurnatResolver {
    * * GraphQL: [Restaurant]   *
    */
 
-  @Query((returns) => [Restaurant])
+  // * @Query((returns) => [Restaurant])
   // * veganOnly라는 args가 넘어올건데, 이건 boolean 타입이다.
   // * 여기서 적용된  boolean은 ts, graphQL 모두에 적용
-  restaurants(@Args('veganOnly') veganOnly: boolean): Restaurant[] {
-    console.log(
-      '🚀 ~ file: restaurants.resolver.ts ~ line 24 ~ RestaurnatResolver ~ restaurants ~ veganOnly',
-      veganOnly,
-    );
-    return [];
+  // * restaurants(@Args('veganOnly') veganOnly: boolean): Restaurant[] {
+  // *  console.log(
+  // *   '🚀 ~ file: restaurants.resolver.ts ~ line 24 ~ RestaurnatResolver ~ restaurants ~ veganOnly',
+  // *    veganOnly,
+  // *  );
+  // *  return [];
+  // * }
+
+  @Query((returns) => [Restaurant])
+  restaurants(): Promise<Restaurant[]> {
+    return this.restaurantService.getAll();
   }
 
   /**
@@ -62,16 +71,49 @@ export class RestaurnatResolver {
    * * 객체 타입은 Dtos 폴더에 dto.ts 파일 생성하여 내부에 @inputType, @field 데코레이터를 사용하여 설정
    */
   @Mutation((returns) => Boolean)
-  createRestaurant(
-    @Args() createRestaurntDto: CreateRestaurantDto,
+  async createRestaurant(
+    @Args('input') createRestaurntDto: CreateRestaurantDto,
     // * @Args('createRestaurantInput') createRestaurntInput: CreateRestaurantDto,
     // * 만약 playground에서 createRestaurantInput 이름을 이용해 가져오기 귀찮다면,
     // * 이 이름은 생략 가능 => 대신, dto에서 inputType을 ArgsType으로 변경 필요
-  ): boolean {
+  ): Promise<boolean> {
     console.log(
       '🚀 ~ file: restaurants.resolver.ts ~ line 68 ~ RestaurnatResolver ~ createRestaurntDto',
       createRestaurntDto,
     );
-    return true;
+    try {
+      await this.restaurantService.createRestaurant(createRestaurntDto);
+      return true;
+    } catch (err) {
+      console.log(err);
+      return false;
+    }
+  }
+
+  /**
+   * * Args를 여러개 줄 수 있지만, 하나로 축약해서도 전달 가능
+   *
+   * * @Mutation((returns) => Boolean)
+   * *    async updateRestaurant(
+   * *    @Args('id') id: number,
+   * *    @Args('data') data: UpdateRestaurantDto,
+   * *  ) {
+   * *    return true;
+   * *  }
+   *
+   * * 아래가 축약 버전
+   */
+
+  @Mutation((resturns) => Boolean)
+  async updateRestaurant(
+    @Args() updateRestaurantDto: UpdateRestaurantDto,
+  ): Promise<boolean> {
+    try {
+      await this.restaurantService.updateRestaurant(updateRestaurantDto);
+      return true;
+    } catch (err) {
+      console.log('updateRestaurant err: ', err);
+      return false;
+    }
   }
 }

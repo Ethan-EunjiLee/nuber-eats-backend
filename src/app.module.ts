@@ -4,6 +4,14 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { join } from 'path';
 import { RestaurantsModule } from './restaurants/restaurants.module';
+// * javascript 패키지 import 방식
+import * as Joi from 'joi';
+import { Restaurant } from './restaurants/entities/restaurant.entity';
+// * typescript 패키지 import 방식
+// * import Joi from 'joi';
+// * javscript로 작성된 패키지를 typescript 방식으로 import하면 undefined로 나온다.
+
+// console.log('joi: ', Joi);
 
 @Module({
   imports: [
@@ -25,6 +33,17 @@ import { RestaurantsModule } from './restaurants/restaurants.module';
        * * 서버에 deploy 할 때, 환경변수 파일을 사용하지 않을거니?
        * * script start 부분에 prod 내용 추가 해야 적용된다.
        */
+      validationSchema: Joi.object({
+        // * valid: NODE_ENV가 valid메소드에 인자로 들어가는 값 중 하나여야 한다.
+        // * required(): 필수로 있어야 한다.
+        // * required()로 설정된 변수가 존재하지 않을 경우 에러 발생
+        NODE_ENV: Joi.string().valid('dev', 'prod').required(),
+        DB_HOST: Joi.string().required(),
+        DB_PORT: Joi.string().required(),
+        DB_USERNAME: Joi.string().required(),
+        DB_PASSWORD: Joi.string().required(),
+        DB_DATABASE: Joi.string().required(),
+      }),
     }),
     // * typeORM 설정
     TypeOrmModule.forRoot({
@@ -35,10 +54,13 @@ import { RestaurantsModule } from './restaurants/restaurants.module';
       username: process.env.DB_USERNAME, // * .env 설정 전: 'postgres'
       password: process.env.DB_PASSWORD, // * .env 설정 전: 'postgres', // * localhost의 경우 password 확인 생략된다.(postgres)
       database: process.env.DB_DATABASE, // * .env 설정 전: 'nuber-eats', // * 없는 db에 연결할 경우 에러 발생
-      synchronize: true,
+      synchronize: process.env.NODE_ENV !== 'prod',
       // * synchonize: TypeORM이 데이터베이스를 연결할 때, 데이터베이스를 현재 동작하는 모듈의 상태로 마이그레이션 할거니?
-      logging: true,
+      // * code에 맞춰서 DB를 매번 migration
+      // * 지금 이 코드 해석: prod가 아닌 경우에만 true(synchronize)
+      logging: process.env.NODE_ENV !== 'prod',
       // * logging: 데이터베이스에서 무슨 일이 일어나는지 콘솔에 표시할거니?
+      entities: [Restaurant],
     }),
     // * graphQL 설정
     GraphQLModule.forRoot({
