@@ -7,6 +7,9 @@ import { RestaurantsModule } from './restaurants/restaurants.module';
 // * javascript 패키지 import 방식
 import * as Joi from 'joi';
 import { Restaurant } from './restaurants/entities/restaurant.entity';
+import { UsersModule } from './users/users.module';
+import { CommonModule } from './common/common.module';
+import { User } from './users/entities/user.entity';
 // * typescript 패키지 import 방식
 // * import Joi from 'joi';
 // * javscript로 작성된 패키지를 typescript 방식으로 import하면 undefined로 나온다.
@@ -60,13 +63,18 @@ import { Restaurant } from './restaurants/entities/restaurant.entity';
       // * 지금 이 코드 해석: prod가 아닌 경우에만 true(synchronize)
       logging: process.env.NODE_ENV !== 'prod',
       // * logging: 데이터베이스에서 무슨 일이 일어나는지 콘솔에 표시할거니?
-      entities: [Restaurant],
+      entities: [
+        //Restaurant => 테스트용
+        User,
+      ],
     }),
     // * graphQL 설정
     GraphQLModule.forRoot({
       autoSchemaFile: true,
     }),
-    RestaurantsModule,
+    // RestaurantsModule, => 테스트용
+    UsersModule,
+    CommonModule,
   ], // == new ApolloServer({기타 설정})
   controllers: [],
   providers: [],
