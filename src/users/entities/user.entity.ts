@@ -66,4 +66,15 @@ export class User extends CoreEntity {
       throw new InternalServerErrorException();
     }
   }
+
+  async checkPassword(aPassword: string): Promise<boolean> {
+    try {
+      // *  입력받은 aPassword와 이메일 일치해서 만든 User 객체의 password를 비교
+      const ok = await bcrypt.compare(aPassword, this.password);
+      return ok;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException();
+    }
+  }
 }

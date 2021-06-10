@@ -23,13 +23,7 @@ export class UsersResolver {
   ): Promise<CreateAccountOutput> {
     try {
       // * 배열에 들어있는 값을 순서대로 각각 ok, error로 정의
-      const { ok, error } = await this.usersService.createAccount(
-        createAccountInput,
-      );
-      return {
-        ok,
-        error,
-      };
+      return this.usersService.createAccount(createAccountInput);
     } catch (err) {
       return {
         error: err,
@@ -41,9 +35,13 @@ export class UsersResolver {
   // ! 로그인
   @Mutation((returns) => LoginOutput)
   async login(@Args('input') loginInput: LoginInput): Promise<LoginOutput> {
-    return {
-      ok: true,
-      token: 'token',
-    };
+    try {
+      return this.usersService.login(loginInput);
+    } catch (error) {
+      return {
+        ok: false,
+        error,
+      };
+    }
   }
 }

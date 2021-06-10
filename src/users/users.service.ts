@@ -5,6 +5,7 @@ import {
   CreateAccountInput,
   CreateAccountOutput,
 } from './dtos/create-account.dto';
+import { LoginInput } from './dtos/login.dto';
 import { User } from './entities/user.entity';
 
 @Injectable()
@@ -39,6 +40,49 @@ export class UsersService {
     } catch (err) {
       // * make and return error
       return { ok: false, error: "Couldn't create account" };
+    }
+  }
+
+  // ! 로그인
+  async login({
+    email,
+    password,
+  }: LoginInput): Promise<{ ok: boolean; error?: string; token?: string }> {
+    // * 1. find the user with the email
+    // * 2. check if the password is correct
+    // * 3. make a JWT and give it to the user
+
+    // ! 1. find the user with the email
+    try {
+      const user = await this.users.findOne({ email }); // * DB에서 email이 입력받은 email인 경우 출력
+      if (!user) {
+        // * 이메일이 일치하는 유저가 없는 경우
+        return {
+          ok: false,
+          error: 'User not found',
+        };
+      }
+      // ! 2. check if the password is correct
+      // * user 객체는 user.entity 인스턴스로 checkPassword method를 가지고 있다.
+      // * 입력받은 aPassword와 이메일 일치해서 만든 User 객체의 password를 비교
+      const passwordCorrect = await user.checkPassword(password);
+      if (!passwordCorrect) {
+        return {
+          ok: false,
+          error: 'Wrong password',
+        };
+      }
+      // ! 3. TODO: make a JWT and give it to the user
+      // * 비밀번호 일치하는 경우
+      return {
+        ok: true,
+        token: 'not yet token',
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error,
+      };
     }
   }
 }
