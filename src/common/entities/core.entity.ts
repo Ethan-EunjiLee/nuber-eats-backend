@@ -1,4 +1,4 @@
-import { Field } from '@nestjs/graphql';
+import { Field, ObjectType } from '@nestjs/graphql';
 import {
   CreateDateColumn,
   PrimaryGeneratedColumn,
@@ -9,6 +9,7 @@ import {
  * ! CoreEntity
  * ! :모든 다른 Entity들은 id가 설정되어 있는 CoreEntity를 상속받아 구현한다
  */
+@ObjectType()
 export class CoreEntity {
   @PrimaryGeneratedColumn()
   @Field((type) => Number) // * GraphQL

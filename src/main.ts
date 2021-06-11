@@ -1,8 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-
-//  TODO: Notion 네모박스 처리하기
+import { JwtMiddleware } from './jwt/jwt.middleware';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,6 +11,9 @@ async function bootstrap() {
 
   // * package.json 수정해서 env 읽어오기 완료
   // console.log('main.ts: ', process.env.DB_HOST);
+
+  // * 미들웨어 등록 > 함수형만 사용 가능
+  // app.use(JwtMiddleware);
 
   await app.listen(3000);
 }

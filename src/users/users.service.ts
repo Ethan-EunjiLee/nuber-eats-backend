@@ -7,12 +7,27 @@ import {
 } from './dtos/create-account.dto';
 import { LoginInput } from './dtos/login.dto';
 import { User } from './entities/user.entity';
+import * as jwt from 'jsonwebtoken';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from 'src/jwt/jwt.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User) private readonly users: Repository<User>,
-  ) {}
+    /**
+     * * 환경변수 사용하기(ConfigModule을 사용해서)
+     *
+     * * 1. 환경변수를 사용할 모듈의 imports 배열에 ConfigService 추가
+     * * 2. ConfigService를 주입
+     * * 3. 주입한 ConfigService의 get("환경변수명") 메소드를 이용해 환경변수를 불러온다.
+     */
+    private readonly config: ConfigService,
+    private readonly jwtService: JwtService,
+  ) {
+    // 테스트
+    console.log('SECRET_KEY: ', this.config.get('SECRET_KEY'));
+  }
 
   // ! 계정 만들기
   // * es6는 객체의 각 값을 바로 변수로 빼서 가져올 수 있다.
@@ -72,11 +87,14 @@ export class UsersService {
           error: 'Wrong password',
         };
       }
-      // ! 3. TODO: make a JWT and give it to the user
+      // ! 3. make a JWT and give it to the user
+      // * id는 coreEntity에 선언되어 있다.
+      const token = this.jwtService.sign(user.id);
+      console.log('id:', user.id);
       // * 비밀번호 일치하는 경우
       return {
         ok: true,
-        token: 'not yet token',
+        token,
       };
     } catch (error) {
       return {
@@ -84,5 +102,9 @@ export class UsersService {
         error,
       };
     }
+  }
+
+  async findById(id: number): Promise<User> {
+    return this.users.findOne({ id });
   }
 }

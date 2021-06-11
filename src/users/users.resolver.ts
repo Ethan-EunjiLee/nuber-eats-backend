@@ -1,9 +1,13 @@
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { UseGuards } from '@nestjs/common';
+import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { AuthUser } from 'src/auth/auth-user.decorator';
+import { AuthGuard } from 'src/auth/auth.guard';
 import {
   CreateAccountInput,
   CreateAccountOutput,
 } from './dtos/create-account.dto';
 import { LoginInput, LoginOutput } from './dtos/login.dto';
+import { UserProfileInput, UserProfileOutput } from './dtos/user-profile.dto';
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 
@@ -41,6 +45,45 @@ export class UsersResolver {
       return {
         ok: false,
         error,
+      };
+    }
+  }
+
+  @Query((returns) => User)
+  @UseGuards(AuthGuard)
+  me(@AuthUser() authUser: User) {
+    console.log('me authUser: ', authUser);
+    return authUser;
+
+    /**
+     * * me(@Context() { potato }): 이렇게하면 context에서 원하는 값 가져올 수 있다.
+     *
+     * * @Context() context
+     * * GraphQLModule.forRoot()에서 추가로 넣어줄 수 있다 뿐이지,
+     * * context로 접근하면 기존 req값들 다 받아올 수 있다.
+     */
+  }
+
+  // ! 프로필 보기
+  @UseGuards(AuthGuard)
+  @Query((returns) => UserProfileOutput)
+  async userProfile(
+    @Args() userProfileInput: UserProfileInput,
+  ): Promise<UserProfileOutput> {
+    try {
+      const user = await this.usersService.findById(userProfileInput.userId);
+
+      if (!user) {
+        throw Error();
+      }
+      return {
+        ok: true,
+        user,
+      };
+    } catch (error) {
+      return {
+        error: 'User Not Found',
+        ok: false,
       };
     }
   }

@@ -1,4 +1,9 @@
-import { Module } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -8,8 +13,10 @@ import { RestaurantsModule } from './restaurants/restaurants.module';
 import * as Joi from 'joi';
 import { Restaurant } from './restaurants/entities/restaurant.entity';
 import { UsersModule } from './users/users.module';
-import { CommonModule } from './common/common.module';
 import { User } from './users/entities/user.entity';
+import { JwtMiddleware } from './jwt/jwt.middleware';
+import { JwtModule } from './jwt/jwt.module';
+import { AuthModule } from './auth/auth.module';
 // * typescript 패키지 import 방식
 // * import Joi from 'joi';
 // * javscript로 작성된 패키지를 typescript 방식으로 import하면 undefined로 나온다.
@@ -20,7 +27,7 @@ import { User } from './users/entities/user.entity';
   imports: [
     // * 환경변수 설정
     ConfigModule.forRoot({
-      isGlobal: true, // * isGlobal: 우리 어플리케이션 어디에서나 config모듈에 접근할 수 있니?
+      isGlobal: true, // * isGlobal: 우리 어플리케이션 어디에서나 config모듈에 접근할 수 있니? -> true인 경우 다른 하위 모듈에서 해당 Service를 사용할 때 import해줄 필요 없다.
       // * envFilePath: '.env', // * envFilePath: configModule이 읽어야 할 환경변수 위치 설정 -> .env라고만 해도 알아서 읽어온다.
       envFilePath: process.env.NODE_ENV === 'dev' ? '.env.dev' : '.env.test',
       /**
@@ -46,6 +53,7 @@ import { User } from './users/entities/user.entity';
         DB_USERNAME: Joi.string().required(),
         DB_PASSWORD: Joi.string().required(),
         DB_DATABASE: Joi.string().required(),
+        PRIVATE_KEY: Joi.string().required(),
       }),
     }),
     // * typeORM 설정
@@ -71,12 +79,33 @@ import { User } from './users/entities/user.entity';
     // * graphQL 설정
     GraphQLModule.forRoot({
       autoSchemaFile: true,
+      context: ({ req }) => ({ potato: 'potato', user: req['user'] }),
     }),
     // RestaurantsModule, => 테스트용
     UsersModule,
-    CommonModule,
+
+    JwtModule.forRoot({
+      privateKey: process.env.PRIVATE_KEY,
+    }),
+    AuthModule,
   ], // == new ApolloServer({기타 설정})
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+
+// * 함수형 Middleware의 경우 main.ts에서도 구현 가능
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    // * MiddlewareConfigProxy.forRoutes([정확히 어떤 routes에 지정할지 설정])
+    // * forRoute는 없어도 상관은 없음. 추가 설정이 하고 싶으면 작성
+    consumer.apply(JwtMiddleware).forRoutes({
+      path: '/graphql', // * 모든 url에서 원할 경우 '*' 지정
+      method: RequestMethod.POST, // * 모든 Method에서 원할 경우 RequestMethod.all로 지정
+    });
+    // * .exclude({
+    //   * 배제할 라우터 정의
+    // *  path: '/api',
+    // *  method: RequestMethod.ALL,
+    // * });
+  }
+}
