@@ -6,8 +6,10 @@ import {
   CreateAccountInput,
   CreateAccountOutput,
 } from './dtos/create-account.dto';
+import { EditProfileInput, EditProfileOutput } from './dtos/edit-profile.dto';
 import { LoginInput, LoginOutput } from './dtos/login.dto';
 import { UserProfileInput, UserProfileOutput } from './dtos/user-profile.dto';
+import { VerifyEmailInput, VerifyEmailOutput } from './dtos/verify-email.dto';
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 
@@ -15,25 +17,12 @@ import { UsersService } from './users.service';
 export class UsersResolver {
   constructor(private readonly usersService: UsersService) {}
 
-  @Query((returns) => Boolean)
-  hi(): Boolean {
-    return true;
-  }
-
   // ! 회원가입
   @Mutation((returns) => CreateAccountOutput) // * error? ok!
   async createAccount(
     @Args('input') createAccountInput: CreateAccountInput,
   ): Promise<CreateAccountOutput> {
-    try {
-      // * 배열에 들어있는 값을 순서대로 각각 ok, error로 정의
-      return this.usersService.createAccount(createAccountInput);
-    } catch (err) {
-      return {
-        error: err,
-        ok: false,
-      };
-    }
+    return this.usersService.createAccount(createAccountInput);
   }
 
   // ! 로그인
@@ -49,12 +38,14 @@ export class UsersResolver {
     }
   }
 
+  // ! AuthUser: 현재 로그인한 사람의 정보 출력
   @Query((returns) => User)
   @UseGuards(AuthGuard)
+  // * me(@AuthUser() authUser:User) {  이거로하면 에러가 안뜬다... 어디서 ok가 붙어오는지 모르겠다!
   me(@AuthUser() authUser: User) {
     console.log('me authUser: ', authUser);
-    return authUser;
 
+    return authUser;
     /**
      * * me(@Context() { potato }): 이렇게하면 context에서 원하는 값 가져올 수 있다.
      *
@@ -70,21 +61,57 @@ export class UsersResolver {
   async userProfile(
     @Args() userProfileInput: UserProfileInput,
   ): Promise<UserProfileOutput> {
-    try {
-      const user = await this.usersService.findById(userProfileInput.userId);
+    return this.usersService.findById(userProfileInput.userId);
+  }
 
-      if (!user) {
-        throw Error();
-      }
-      return {
-        ok: true,
-        user,
-      };
-    } catch (error) {
-      return {
-        error: 'User Not Found',
-        ok: false,
-      };
-    }
+  // ! userProfile 수정
+  // * AuthUser: 현재 로그인한 사람의 정보 출력
+  @UseGuards(AuthGuard)
+  @Mutation((returns) => EditProfileOutput)
+  async editProfile(
+    @AuthUser() authUser: User,
+    @Args('input') editProfileInput: EditProfileInput,
+  ): Promise<EditProfileOutput> {
+    return this.usersService.editProfile(authUser.id, editProfileInput);
+
+    // try {
+    //   console.log(
+    //     '🚀 ~ file: users.resolver.ts ~ line 101 ~ UsersResolver ~ editProfileInput',
+    //     editProfileInput,
+    //   );
+
+    //   console.log(
+    //     'editProfie Resolver: ',
+    //     await this.usersService.editProfile(authUser.id, editProfileInput),
+    //   );
+
+    //   return {
+    //     ok: true,
+    //   };
+    // } catch (error) {
+    //   return {
+    //     ok: false,
+    //     error,
+    //   };
+    // }
+  }
+
+  @Mutation((returns) => VerifyEmailOutput)
+  async verifyEmail(
+    @Args('input') verifyEmailInput: VerifyEmailInput,
+  ): Promise<VerifyEmailOutput> {
+    return this.usersService.verifyEmail(verifyEmailInput.code);
+
+    // try {
+    //   await this.usersService.verifyEmail(verifyEmailInput.code); // * false인 경우 verifyEmail에서 Error로 던짐
+    //   return {
+    //     ok: true,
+    //   };
+    // } catch (error) {
+    //   return {
+    //     ok: false,
+    //     error,
+    //   };
+    // }
   }
 }

@@ -17,6 +17,7 @@ import { User } from './users/entities/user.entity';
 import { JwtMiddleware } from './jwt/jwt.middleware';
 import { JwtModule } from './jwt/jwt.module';
 import { AuthModule } from './auth/auth.module';
+import { Verification } from './users/entities/verification.entity';
 // * typescript 패키지 import 방식
 // * import Joi from 'joi';
 // * javscript로 작성된 패키지를 typescript 방식으로 import하면 undefined로 나온다.
@@ -74,6 +75,7 @@ import { AuthModule } from './auth/auth.module';
       entities: [
         //Restaurant => 테스트용
         User,
+        Verification,
       ],
     }),
     // * graphQL 설정

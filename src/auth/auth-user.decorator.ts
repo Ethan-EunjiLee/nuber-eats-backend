@@ -4,6 +4,8 @@ import { GqlExecutionContext } from '@nestjs/graphql';
 // * 데코레이터 만들기
 // * AuthUser: 데코레이터 이름
 
+// ! AuthUser: 현재 로그인한 사람의 정보 출력
+
 export const AuthUser = createParamDecorator(
   (data: unknown, context: ExecutionContext) => {
     console.log('here is AuthUser Decorator');

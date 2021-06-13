@@ -26,7 +26,9 @@ export class JwtMiddleware implements NestMiddleware {
         if (typeof decoded === 'object' && decoded.hasOwnProperty('id')) {
           // * 자바스크립트의 객체에서 키값을 이용해 값을 부르는 방법: 객체['키값'] => console.log(decoded['id']);
 
-          const user = await this.userService.findById(decoded['id']);
+          // * findById가 ok까지 주는거로 수정되는 바람에 여기도 수정했다.
+          // * const  user  = await this.userService.findById(decoded['id']);
+          const { user } = await this.userService.findById(decoded['id']);
           console.log('jwtMiddleware user: ', user);
           req['user'] = user; // * 새로 찾은 user 객체를 Request로 보내기
         } else {

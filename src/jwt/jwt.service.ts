@@ -17,6 +17,11 @@ export class JwtService {
     console.log('CONFIG_OPTIONS: ', options);
   }
   sign(userId: number): string {
+    console.log(
+      '🚀 ~ file: jwt.service.ts ~ line 20 ~ JwtService ~ sign ~ userId',
+      userId,
+    );
+
     return jwt.sign({ id: userId }, this.options.privateKey);
     // * 위와 동일: return jwt.sign(payload, this.configService.get('PRIVATE_KEY'));
   }

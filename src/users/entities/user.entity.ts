@@ -5,7 +5,7 @@ import {
   registerEnumType,
 } from '@nestjs/graphql';
 import { CoreEntity } from 'src/common/entities/core.entity';
-import { BeforeInsert, Column, Entity } from 'typeorm';
+import { BeforeInsert, BeforeUpdate, Column, Entity } from 'typeorm';
 import { UsersModule } from '../users.module';
 import * as bcrypt from 'bcrypt';
 import { InternalServerErrorException } from '@nestjs/common';
@@ -41,7 +41,8 @@ export class User extends CoreEntity {
   @IsEmail()
   email: string;
 
-  @Column() // * Postgres
+  // TODO: 이렇게 바꿔버리면, hash는 막을 수 있지만, 그 외 로직에서 에러 발생...
+  @Column({ select: false }) // * Postgres
   @Field((type) => String) // * GraphQL
   password: string;
 
@@ -50,20 +51,31 @@ export class User extends CoreEntity {
   @IsEnum(UserRole)
   role: UserRole;
 
-  @BeforeInsert()
+  // * Verification을 위해 추가한 칼럼 -> User의 email verify 여부 체크 필요
+  @Column({ default: false }) // 기본값 false
+  @Field((type) => Boolean)
+  verified: boolean;
+
+  @BeforeInsert() // * db에 넣기 전에 비밀번호 암호화
+  @BeforeUpdate() // * 업데이트전에 비밀번호 암호화, 그러나, verifyEmail 메소드에서 save()를 통해 verified를 변경하는 과정에서 또 암호화 발생
+  // * -> entity를 가져온 후 → js에서 직접 entity를 수정한 후 → save()를 이용해 entity를 update
   async hashPassword(): Promise<void> {
     // * bcrypt.hash(데이터, saltOrRounds)
     // * saltRounds 주로 10을 추천 -> 암호화 몇번?
     // * resolver에서 Repository.save() 하기전에 호출해서 비번을 암호화한다
 
-    try {
-      // * create()에서 만든 entity 인스턴스를 save에 넣기 전에 인스턴스의 password 낚아채서 처리
-      this.password = await bcrypt.hash(this.password, 10);
-    } catch (error) {
-      console.log('error: ', error);
-      // * 여기서 예외 던지면, service의 catch에서 잡는다.
-      // * createAccount try-catch
-      throw new InternalServerErrorException();
+    if (this.password) {
+      // * 넘어온 entity 객체에 password가 없는 경우 암호화 X
+      try {
+        // * create()에서 만든 entity 인스턴스를 save에 넣기 전에 인스턴스의 password 낚아채서 처리
+        this.password = await bcrypt.hash(this.password, 10);
+        console.log('hasspassword: ', this.password);
+      } catch (error) {
+        console.log('error: ', error);
+        // * 여기서 예외 던지면, service의 catch에서 잡는다.
+        // * createAccount try-catch
+        throw new InternalServerErrorException();
+      }
     }
   }
 
