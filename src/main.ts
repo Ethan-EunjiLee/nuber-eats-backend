@@ -15,6 +15,6 @@ async function bootstrap() {
   // * 미들웨어 등록 > 함수형만 사용 가능
   // app.use(JwtMiddleware);
 
-  await app.listen(3000);
+  await app.listen(5000);
 }
 bootstrap();

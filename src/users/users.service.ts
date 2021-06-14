@@ -14,6 +14,7 @@ import { EditProfileInput, EditProfileOutput } from './dtos/edit-profile.dto';
 import { Verification } from './entities/verification.entity';
 import { UserProfileOutput } from './dtos/user-profile.dto';
 import { VerifyEmailOutput } from './dtos/verify-email.dto';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class UsersService {
@@ -30,6 +31,7 @@ export class UsersService {
      */
     //private readonly config: ConfigService,
     private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
   ) {
     // 테스트
     //console.log('SECRET_KEY: ', this.config.get('SECRET_KEY'));
@@ -63,12 +65,12 @@ export class UsersService {
       // * TODO: 유저가 입력한 이메일 확인(verification)
       // * user가 들어가는 verification entity를 만든(create) 후 db에 저장(save)
       // * 현재는 임의의 코드가 verification에 저장만 되고 있음
-      await this.verifications.save(
+      const verification = await this.verifications.save(
         this.verifications.create({
           user,
         }),
       );
-
+      this.mailService.sendVerificationEmail(user.email, verification.code);
       return { ok: true };
     } catch (err) {
       // * make and return error
@@ -191,11 +193,26 @@ export class UsersService {
       if (email) {
         user.email = email;
         user.verified = false; // * email이 변경되면 다시 verification 받아야 한다.
-        await this.verifications.save(
+        // console.log(
+        //   '🚀 ~ file: users.service.ts ~ line 196 ~ UsersService ~ **editProfile ~ user',
+        //   user,
+        // );
+
+        // console.log(
+        //   'this.verification: ',
+        //   this.verifications.create({
+        //     user,
+        //   }),
+        // );
+
+        // ! (6-9)이게 지금 여기서 나오는게 아닌데.... 여튼 이거로 해결
+        await this.verifications.delete({ user: { id: user.id } });
+        const verification = await this.verifications.save(
           this.verifications.create({
             user,
           }),
         );
+        this.mailService.sendVerificationEmail(user.email, verification.code);
       }
       if (password) {
         user.password = password; // * password값이 있는 경우 hash 진행
@@ -206,6 +223,7 @@ export class UsersService {
         ok: true,
       };
     } catch (error) {
+      console.log('error: ', error);
       return {
         ok: false,
         error: 'Could not update profile',
