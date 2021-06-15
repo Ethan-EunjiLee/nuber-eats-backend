@@ -95,7 +95,6 @@ export class UsersService {
         { email },
         { select: ['password', 'id'] }, // * select : fase인 password를 선택하기 위해 id도 select 처리
       ); // * DB에서 email이 입력받은 email인 경우 출력
-      console.log('test: user: ', user);
       if (!user) {
         // * 이메일이 일치하는 유저가 없는 경우
         return {
@@ -117,7 +116,6 @@ export class UsersService {
       // ! 3. make a JWT and give it to the user
       // * id는 coreEntity에 선언되어 있다.
       const token = this.jwtService.sign(user.id);
-      console.log('id:', user.id);
       // * 비밀번호 일치하는 경우
       return {
         ok: true,
@@ -133,18 +131,18 @@ export class UsersService {
 
   async findById(id: number): Promise<UserProfileOutput> {
     try {
-      const user = await this.users.findOne({ id });
-      if (!user) {
-        throw Error();
-      }
+      // * findOneOrFail: 찾기 실패할 경우 예외를 던진다.
+      // * ==> user를 찾지 못할 경우 에러 발생
+      const user = await this.users.findOneOrFail({ id });
+
       return {
         ok: true,
         user,
       };
     } catch (error) {
       return {
-        error: 'User not found',
         ok: false,
+        error: 'User not found',
       };
     }
 
@@ -167,7 +165,7 @@ export class UsersService {
    */
   async editProfile(
     userId: number,
-    editProfileInput: EditProfileInput,
+    { email, password }: EditProfileInput,
   ): Promise<EditProfileOutput> {
     /**
      * * [repository.update()]
@@ -187,7 +185,7 @@ export class UsersService {
     // * js로 entity를 직접 update
 
     try {
-      const { email, password } = editProfileInput;
+      //const { email, password } = editProfileInput;
       const user = await this.users.findOne(userId);
 
       if (email) {
