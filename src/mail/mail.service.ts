@@ -13,7 +13,7 @@ export class MailService {
   ) {}
 
   // ! 이메일 보내기
-  private async sendEmail(subject: string, content: string) {
+  async sendEmail(subject: string, content: string) {
     const form = new FormData();
     form.append('from', `Excited User <mailgun@${this.options.emailDomain}>`);
     form.append('to', 'dev.eunji.lee@gmail.com'); // * 누구에게 이메일 보낼거니?

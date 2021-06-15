@@ -27,7 +27,7 @@ import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
-    // * 환경변수 설정
+    // * 환경변수 설정 => import 제일 먼저
     ConfigModule.forRoot({
       isGlobal: true, // * isGlobal: 우리 어플리케이션 어디에서나 config모듈에 접근할 수 있니? -> true인 경우 다른 하위 모듈에서 해당 Service를 사용할 때 import해줄 필요 없다.
       // * envFilePath: '.env', // * envFilePath: configModule이 읽어야 할 환경변수 위치 설정 -> .env라고만 해도 알아서 읽어온다.
