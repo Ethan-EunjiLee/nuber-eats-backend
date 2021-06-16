@@ -3,19 +3,19 @@ import {
   Module,
   NestModule,
   RequestMethod,
-} from '@nestjs/common'
-import { ConfigModule } from '@nestjs/config'
-import { GraphQLModule } from '@nestjs/graphql'
-import { TypeOrmModule } from '@nestjs/typeorm'
+} from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { GraphQLModule } from '@nestjs/graphql';
+import { TypeOrmModule } from '@nestjs/typeorm';
 // * javascript 패키지 import 방식
-import * as Joi from 'joi'
-import { UsersModule } from './users/users.module'
-import { User } from './users/entities/user.entity'
-import { JwtMiddleware } from './jwt/jwt.middleware'
-import { JwtModule } from './jwt/jwt.module'
-import { AuthModule } from './auth/auth.module'
-import { Verification } from './users/entities/verification.entity'
-import { MailModule } from './mail/mail.module'
+import * as Joi from 'joi';
+import { UsersModule } from './users/users.module';
+import { User } from './users/entities/user.entity';
+import { JwtMiddleware } from './jwt/jwt.middleware';
+import { JwtModule } from './jwt/jwt.module';
+import { AuthModule } from './auth/auth.module';
+import { Verification } from './users/entities/verification.entity';
+import { MailModule } from './mail/mail.module';
 // * typescript 패키지 import 방식
 // * import Joi from 'joi';
 // * javscript로 작성된 패키지를 typescript 방식으로 import하면 undefined로 나온다.
@@ -46,7 +46,7 @@ import { MailModule } from './mail/mail.module'
         // * valid: NODE_ENV가 valid메소드에 인자로 들어가는 값 중 하나여야 한다.
         // * required(): 필수로 있어야 한다.
         // * required()로 설정된 변수가 존재하지 않을 경우 에러 발생
-        NODE_ENV: Joi.string().valid('dev', 'prod').required(),
+        NODE_ENV: Joi.string().valid('dev', 'prod', 'test').required(),
         DB_HOST: Joi.string().required(),
         DB_PORT: Joi.string().required(),
         DB_USERNAME: Joi.string().required(),
@@ -71,7 +71,8 @@ import { MailModule } from './mail/mail.module'
       // * synchonize: TypeORM이 데이터베이스를 연결할 때, 데이터베이스를 현재 동작하는 모듈의 상태로 마이그레이션 할거니?
       // * code에 맞춰서 DB를 매번 migration
       // * 지금 이 코드 해석: prod가 아닌 경우에만 true(synchronize)
-      logging: process.env.NODE_ENV !== 'prod',
+      logging:
+        process.env.NODE_ENV !== 'prod' && process.env.NODE_ENV !== 'test',
       // * logging: 데이터베이스에서 무슨 일이 일어나는지 콘솔에 표시할거니?
       entities: [
         //Restaurant => 테스트용
@@ -109,7 +110,7 @@ export class AppModule implements NestModule {
     consumer.apply(JwtMiddleware).forRoutes({
       path: '/graphql', // * 모든 url에서 원할 경우 '*' 지정
       method: RequestMethod.POST, // * 모든 Method에서 원할 경우 RequestMethod.all로 지정
-    })
+    });
     // * .exclude({
     //   * 배제할 라우터 정의
     // *  path: '/api',
