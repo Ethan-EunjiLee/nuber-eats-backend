@@ -1,14 +1,21 @@
 import { Test } from '@nestjs/testing';
 import { CONFIG_OPTIONS } from 'src/common/common.constants';
 import { MailService } from './mail.service';
+import * as FormData from 'form-data';
+import got from 'got';
+import { TEST_ENV } from '@nestjs/schematics';
+import exp from 'constants';
 
 // * 외부 모듈 mock
-jest.mock('got', () => {}); // * got는 그 자체로 function이기 때문에  return 필요 X
-jest.mock('form-data', () => {
-  return {
-    append: jest.fn(), // * 함수에 따로 return 값이 없다면, 여기서 마무리
-  };
-});
+jest.mock('got'); // * got는 그 자체로 function이기 때문에  return 필요 X
+jest.mock('form-data');
+// jest.mock('form-data', () => {
+//   return {
+//     append: jest.fn(), // * 함수에 따로 return 값이 없다면, 여기서 마무리
+//   };
+// });
+
+const TEST_DOMAIN = 'test-emailDomain';
 
 describe('MailService', () => {
   let service: MailService;
@@ -21,7 +28,7 @@ describe('MailService', () => {
           provide: CONFIG_OPTIONS,
           useValue: {
             apiKey: 'test-apiKey',
-            emailDomain: 'test-emailDomain',
+            emailDomain: TEST_DOMAIN,
             fromEmail: 'test-fromEmail',
           },
         },
@@ -35,7 +42,6 @@ describe('MailService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('sendEmail', () => {});
   describe('sendVerificationEmail', () => {
     it('should call sendEmail', () => {
       const sendVerificationEmailArgs = {
@@ -53,7 +59,9 @@ describe('MailService', () => {
        *
        */
 
-      jest.spyOn(service, 'sendEmail').mockImplementation(async () => {});
+      jest.spyOn(service, 'sendEmail').mockImplementation(async () => {
+        return true;
+      });
 
       service.sendVerificationEmail(
         sendVerificationEmailArgs.email,
@@ -65,6 +73,37 @@ describe('MailService', () => {
         'verify your email',
         sendVerificationEmailArgs.code,
       );
+    });
+  });
+
+  describe('sendEmail', () => {
+    it('sends email', async () => {
+      const ok = await service.sendEmail('', '');
+
+      // * form.append()가 잘 불러지는지
+      // * prototype: 자바스크립트 함수형 객체를 클래스처럼 쓸 수 있게 해준다.
+      // * FormData를 구현할 필요는 없다! 그냥 Spy만 필요 => 그래서 mockImplementation 없음
+      // * 상단에 FormData를 import해야 spy고 뭐고 가능
+      const formSpy = jest.spyOn(FormData.prototype, 'append');
+      expect(formSpy).toHaveBeenCalled();
+
+      // * got이 잘 실행되는지(string, object와 함께)
+      expect(got.post).toHaveBeenCalledWith(
+        `https://api.mailgun.net/v3/${TEST_DOMAIN}/messages`, // * 주입 여부 테스트
+        expect.any(Object),
+      );
+      expect(got.post).toHaveBeenCalledTimes(1);
+      expect(ok).toEqual(true);
+    });
+    it('fails on error', async () => {
+      // * mock으로 에러 got.post가 error 던지도로고 구현
+      jest.spyOn(got, 'post').mockImplementation(() => {
+        throw new Error();
+      });
+      const formSpy = jest.spyOn(FormData.prototype, 'append');
+      const ok = await service.sendEmail('', '');
+
+      expect(ok).toEqual(false);
     });
   });
 });

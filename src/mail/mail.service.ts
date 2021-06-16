@@ -13,7 +13,7 @@ export class MailService {
   ) {}
 
   // ! 이메일 보내기
-  async sendEmail(subject: string, content: string) {
+  async sendEmail(subject: string, content: string): Promise<boolean> {
     const form = new FormData();
     form.append('from', `Excited User <mailgun@${this.options.emailDomain}>`);
     form.append('to', 'dev.eunji.lee@gmail.com'); // * 누구에게 이메일 보낼거니?
@@ -24,10 +24,10 @@ export class MailService {
       // * api:내 api key를 buffer에 넣어 만들고 base64타입으로 인코딩
       // * BASE64 인코딩 - mailgun 규칙
       // * 글자 잘못입력하면 안넘어가니까 주의하자
-      await got(
+      // * 원래는 got 모듈 그대로 썼는데, spec.ts에서 test하기 위해 post로 변경
+      await got.post(
         `https://api.mailgun.net/v3/${this.options.emailDomain}/messages`,
         {
-          method: 'POST',
           headers: {
             Authorization: `Basic ${Buffer.from(
               `api:${this.options.apiKey}`,
@@ -36,11 +36,9 @@ export class MailService {
           body: form,
         },
       );
+      return true;
     } catch (error) {
-      console.log(
-        '🚀 ~ file: mail.service.ts ~ line 42 ~ MailService ~ sendEmail ~ error',
-        error,
-      );
+      return false;
     }
   }
 
