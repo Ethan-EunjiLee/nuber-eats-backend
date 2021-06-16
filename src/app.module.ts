@@ -3,22 +3,19 @@ import {
   Module,
   NestModule,
   RequestMethod,
-} from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { GraphQLModule } from '@nestjs/graphql';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { join } from 'path';
-import { RestaurantsModule } from './restaurants/restaurants.module';
+} from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
+import { GraphQLModule } from '@nestjs/graphql'
+import { TypeOrmModule } from '@nestjs/typeorm'
 // * javascript 패키지 import 방식
-import * as Joi from 'joi';
-import { Restaurant } from './restaurants/entities/restaurant.entity';
-import { UsersModule } from './users/users.module';
-import { User } from './users/entities/user.entity';
-import { JwtMiddleware } from './jwt/jwt.middleware';
-import { JwtModule } from './jwt/jwt.module';
-import { AuthModule } from './auth/auth.module';
-import { Verification } from './users/entities/verification.entity';
-import { MailModule } from './mail/mail.module';
+import * as Joi from 'joi'
+import { UsersModule } from './users/users.module'
+import { User } from './users/entities/user.entity'
+import { JwtMiddleware } from './jwt/jwt.middleware'
+import { JwtModule } from './jwt/jwt.module'
+import { AuthModule } from './auth/auth.module'
+import { Verification } from './users/entities/verification.entity'
+import { MailModule } from './mail/mail.module'
 // * typescript 패키지 import 방식
 // * import Joi from 'joi';
 // * javscript로 작성된 패키지를 typescript 방식으로 import하면 undefined로 나온다.
@@ -112,7 +109,7 @@ export class AppModule implements NestModule {
     consumer.apply(JwtMiddleware).forRoutes({
       path: '/graphql', // * 모든 url에서 원할 경우 '*' 지정
       method: RequestMethod.POST, // * 모든 Method에서 원할 경우 RequestMethod.all로 지정
-    });
+    })
     // * .exclude({
     //   * 배제할 라우터 정의
     // *  path: '/api',
