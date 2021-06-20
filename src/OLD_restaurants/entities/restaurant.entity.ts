@@ -19,7 +19,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 @InputType({ isAbstract: true })
 @Entity()
 @ObjectType()
-export class Restaurant {
+export class OldRestaurant {
   // *  PrimaryColumn이 없으면 Entity가 생성되지 않는다.
   @PrimaryGeneratedColumn()
   @Field((is) => Number)

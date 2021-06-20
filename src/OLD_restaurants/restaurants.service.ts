@@ -6,7 +6,7 @@ import { UpdateRestaurantDto } from './dtos/update-restaurant.dto';
 import { Restaurant } from './entities/restaurant.entity';
 
 @Injectable()
-export class RestaurantService {
+export class OldRestaurantService {
   constructor(
     // * Repository 주입 - Restaurant Module에서 TypeOrmModule.forFeature()에서 정의된 Repository
     // * Entity 이름 필수 입력 필요

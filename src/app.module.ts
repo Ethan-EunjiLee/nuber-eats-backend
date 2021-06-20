@@ -16,6 +16,7 @@ import { JwtModule } from './jwt/jwt.module';
 import { AuthModule } from './auth/auth.module';
 import { Verification } from './users/entities/verification.entity';
 import { MailModule } from './mail/mail.module';
+import { RestaurantModule } from './restaurant/restaurant.module';
 // * typescript 패키지 import 방식
 // * import Joi from 'joi';
 // * javscript로 작성된 패키지를 typescript 방식으로 import하면 undefined로 나온다.
@@ -97,6 +98,7 @@ import { MailModule } from './mail/mail.module';
     AuthModule,
     // RestaurantsModule, => 테스트용
     UsersModule,
+    RestaurantModule,
   ], // == new ApolloServer({기타 설정})
   controllers: [],
   providers: [],

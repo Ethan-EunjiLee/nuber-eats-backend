@@ -9,7 +9,13 @@ import { BeforeInsert, BeforeUpdate, Column, Entity } from 'typeorm';
 import { UsersModule } from '../users.module';
 import * as bcrypt from 'bcrypt';
 import { InternalServerErrorException } from '@nestjs/common';
-import { IsEmail, IsEnum, IsString, isString } from 'class-validator';
+import {
+  IsBoolean,
+  IsEmail,
+  IsEnum,
+  IsString,
+  isString,
+} from 'class-validator';
 
 /**
  * * type으로 설정된 UserRole을 enum으로 변경
@@ -55,6 +61,7 @@ export class User extends CoreEntity {
   // * Verification을 위해 추가한 칼럼 -> User의 email verify 여부 체크 필요
   @Column({ default: false }) // 기본값 false
   @Field((type) => Boolean)
+  @IsBoolean()
   verified: boolean;
 
   @BeforeInsert() // * db에 넣기 전에 비밀번호 암호화

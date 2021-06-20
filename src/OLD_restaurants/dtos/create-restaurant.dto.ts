@@ -1,5 +1,5 @@
 import { InputType, OmitType } from '@nestjs/graphql';
-import { Restaurant } from '../entities/restaurant.entity';
+import { OldRestaurant } from '../entities/restaurant.entity';
 
 // * @ArgsType() // * resolver에서 @Args()의 이름을 지정하지 않은 경우
 // * @InputType() // * resolver에서 @Args()의 이름을 지정해준 경우
@@ -9,8 +9,8 @@ import { Restaurant } from '../entities/restaurant.entity';
 // * 만약, ParentClass에 @InputType({isAbstract: true})가 있다면, 마지막 옵션은 없어도 된다.
 // * validation은 ParentClass에서 설정해주면 된다.
 @InputType()
-export class CreateRestaurantDto extends OmitType(
-  Restaurant,
+export class OldCreateRestaurantDto extends OmitType(
+  OldRestaurant,
   ['id'],
   InputType,
 ) {}
