@@ -36,7 +36,8 @@ registerEnumType(UserRole, { name: 'UserRole' });
 @ObjectType() // * GraphQL
 @Entity() // * Postgres
 export class User extends CoreEntity {
-  @Column() // * Postgres
+  // * unique: true => 테이블의 유일한 값이어야 한다.(중복 불가)
+  @Column({ unique: true }) // * Postgres
   @Field((type) => String) // * GraphQL
   @IsEmail()
   email: string;

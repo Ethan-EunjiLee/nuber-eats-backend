@@ -1,18 +1,18 @@
-import { Injectable } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import {
   CreateAccountInput,
   CreateAccountOutput,
-} from './dtos/create-account.dto'
-import { LoginInput } from './dtos/login.dto'
-import { User } from './entities/user.entity'
-import { JwtService } from 'src/jwt/jwt.service'
-import { EditProfileInput, EditProfileOutput } from './dtos/edit-profile.dto'
-import { Verification } from './entities/verification.entity'
-import { UserProfileOutput } from './dtos/user-profile.dto'
-import { VerifyEmailOutput } from './dtos/verify-email.dto'
-import { MailService } from 'src/mail/mail.service'
+} from './dtos/create-account.dto';
+import { LoginInput } from './dtos/login.dto';
+import { User } from './entities/user.entity';
+import { JwtService } from 'src/jwt/jwt.service';
+import { EditProfileInput, EditProfileOutput } from './dtos/edit-profile.dto';
+import { Verification } from './entities/verification.entity';
+import { UserProfileOutput } from './dtos/user-profile.dto';
+import { VerifyEmailOutput } from './dtos/verify-email.dto';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class UsersService {
@@ -49,16 +49,16 @@ export class UsersService {
     try {
       // * email을 이용해 기존 회원 여부 체크
       // * => Undefined가 아닌 경우 가입된 이메일이라는 것을 의미
-      const exists = await this.users.findOne({ email })
+      const exists = await this.users.findOne({ email });
       if (exists) {
         // * make and return error -> 이미 계정이 있으니까
         // * => thorw Error(): 이런 방식도 당연 가능
-        return { ok: false, error: 'There is a user with that eamil already' } // * 함수 탈출
+        return { ok: false, error: 'There is a user with that eamil already' }; // * 함수 탈출
       }
       // * 2. create user (TODO: not yet: & hash password)
       const user = await this.users.save(
         this.users.create({ email, password, role }),
-      )
+      );
 
       // * TODO: 유저가 입력한 이메일 확인(verification)
       // * user가 들어가는 verification entity를 만든(create) 후 db에 저장(save)
@@ -67,12 +67,12 @@ export class UsersService {
         this.verifications.create({
           user,
         }),
-      )
-      this.mailService.sendVerificationEmail(user.email, verification.code)
-      return { ok: true }
+      );
+      this.mailService.sendVerificationEmail(user.email, verification.code);
+      return { ok: true };
     } catch (err) {
       // * make and return error
-      return { ok: false, error: "Couldn't create account" }
+      return { ok: false, error: "Couldn't create account" };
     }
   }
 
@@ -92,38 +92,38 @@ export class UsersService {
       const user = await this.users.findOne(
         { email },
         { select: ['password', 'id'] }, // * select : fase인 password를 선택하기 위해 id도 select 처리
-      ) // * DB에서 email이 입력받은 email인 경우 출력
+      ); // * DB에서 email이 입력받은 email인 경우 출력
       if (!user) {
         // * 이메일이 일치하는 유저가 없는 경우
         return {
           ok: false,
           error: 'User not found',
-        }
+        };
       }
 
       // ! 2. check if the password is correct
       // * user 객체는 user.entity 인스턴스로 checkPassword method를 가지고 있다.
       // * 입력받은 aPassword와 이메일 일치해서 만든 User 객체의 password를 비교
-      const passwordCorrect = await user.checkPassword(password)
+      const passwordCorrect = await user.checkPassword(password);
       if (!passwordCorrect) {
         return {
           ok: false,
           error: 'Wrong password',
-        }
+        };
       }
       // ! 3. make a JWT and give it to the user
       // * id는 coreEntity에 선언되어 있다.
-      const token = this.jwtService.sign(user.id)
+      const token = this.jwtService.sign(user.id);
       // * 비밀번호 일치하는 경우
       return {
         ok: true,
         token,
-      }
+      };
     } catch (error) {
       return {
         ok: false,
         error,
-      }
+      };
     }
   }
 
@@ -131,17 +131,17 @@ export class UsersService {
     try {
       // * findOneOrFail: 찾기 실패할 경우 예외를 던진다.
       // * ==> user를 찾지 못할 경우 에러 발생
-      const user = await this.users.findOneOrFail({ id })
+      const user = await this.users.findOneOrFail({ id });
 
       return {
         ok: true,
         user,
-      }
+      };
     } catch (error) {
       return {
         ok: false,
         error: 'User not found',
-      }
+      };
     }
 
     //return this.users.findOne({ id });
@@ -174,7 +174,9 @@ export class UsersService {
      * * - update({criteria}, {바꿀 항목들})
      */
 
-    // TODO: 업데이트하면 비밀번호 해시 풀린다... 이유) insert에는 hash가 걸려있지만, update에는 안걸려있다.
+    // * 업데이트하면 비밀번호 해시 풀린다... 이유) insert에는 hash가 걸려있지만, update에는 안걸려있다.
+    // * @BeforeUpdate() 데코레이터로 해시 함수를 추가하여 해결
+
     // * spread 연산자를 이용해 객체에 정의된 값들만 typeORM으로 넣어준다.
     // * 아래와 동일, 단, @BeforeUpdate() 데코레이터 적용을 위해 save()로 변경
     // * return this.users.update();
@@ -184,11 +186,11 @@ export class UsersService {
 
     try {
       //const { email, password } = editProfileInput;
-      const user = await this.users.findOne(userId)
+      const user = await this.users.findOne(userId);
 
       if (email) {
-        user.email = email
-        user.verified = false // * email이 변경되면 다시 verification 받아야 한다.
+        user.email = email;
+        user.verified = false; // * email이 변경되면 다시 verification 받아야 한다.
         // console.log(
         //   '🚀 ~ file: users.service.ts ~ line 196 ~ UsersService ~ **editProfile ~ user',
         //   user,
@@ -202,28 +204,30 @@ export class UsersService {
         // );
 
         // ! (6-9)이게 지금 여기서 나오는게 아닌데.... 여튼 이거로 해결
-        await this.verifications.delete({ user: { id: user.id } })
+        // * unique 문제 해결: 기존 verification을 삭제하고 새 verification을 넣는다.
+        // * 기존 verification을 없애지 않으면 userid값이 일치하는 행일 발생하고, 그럼 OneToOne 문제가 생긴다.
+        await this.verifications.delete({ user: { id: user.id } });
         const verification = await this.verifications.save(
           this.verifications.create({
             user,
           }),
-        )
-        this.mailService.sendVerificationEmail(user.email, verification.code)
+        );
+        this.mailService.sendVerificationEmail(user.email, verification.code);
       }
       if (password) {
-        user.password = password // * password값이 있는 경우 hash 진행
+        user.password = password; // * password값이 있는 경우 hash 진행
       }
 
-      await this.users.save(user)
+      await this.users.save(user);
       return {
         ok: true,
-      }
+      };
     } catch (error) {
-      console.log('error: ', error)
+      console.log('error: ', error);
       return {
         ok: false,
         error: 'Could not update profile',
-      }
+      };
     }
   }
 
@@ -235,27 +239,27 @@ export class UsersService {
         { code: code },
         { relations: ['user'] }, // * 일대일관계 테이블의 entity 통으로
         // { loadRelationId: true }, // * 아이디만
-      )
+      );
 
       // ! 2. 존재한다면, 그걸 삭제하고 연결된 user의 verified 칼럼을 true로 변경
       if (verification) {
         // * code값이 일치하는 verification이 있는 경우 -> verify true로 변경 후 저장 업데이트
-        verification.user.verified = true
-        await this.users.save(verification.user)
+        verification.user.verified = true;
+        await this.users.save(verification.user);
         // * verification을 통해 users에 접근
         // * this.users는 생성자에서 주입한 UserRepository고 여기에 save 메소드를 이용해 verification.user를 저장
 
         // * 이메일 확인 후 verification 지워야 한다.
-        await this.verifications.delete(verification.id)
+        await this.verifications.delete(verification.id);
 
-        return { ok: true }
+        return { ok: true };
       }
       return {
         ok: false,
         error: 'Verification not found',
-      }
+      };
     } catch (error) {
-      return { ok: false, error: 'Could not verify email' }
+      return { ok: false, error: 'Could not verify email' };
     }
   }
 }

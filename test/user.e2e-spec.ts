@@ -5,6 +5,7 @@ import { AppModule } from '../src/app.module';
 import { getConnection, Repository } from 'typeorm';
 import { User } from '../src/users/entities/user.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { Verification } from '../src/users/entities/verification.entity';
 
 jest.mock('got', () => {
   return {
@@ -26,6 +27,18 @@ describe('UserModule (e2e)', () => {
   // * userProfile에서 사용할 user id를 가져오기 위한 변수
   // * 물론 매번 db를 갈아엎기 때문에 id=1 을 이용해 .userProfile을 사용해도 된다.
   let usersRepository: Repository<User>;
+  let verificationRepository: Repository<Verification>;
+
+  /**
+   * * baseTest, publicTest, privateTest를 이용해 코드 정리 가능
+   */
+  // * baseTest: 모든 테스트의 기본이 되는 것을 반환
+  const baseTest = () => request(app.getHttpServer()).post(GRAPHQL_ENDPOINT);
+  // * publicTest: query string을 받아서 baseTest에 추가
+  const publicTest = (query: string) => baseTest().send({ query });
+  // * privateTest: query string을 받아서 baseTest에 추가 + token까지
+  const privateTest = (query: string) =>
+    baseTest().set('X-JWT', jwtToken).send({ query });
 
   // * beforeAll: 모든 test전에 module을 load
   // * 앱을 생성하고 다 import하고, typeorm을 이용하고 등등...
@@ -38,6 +51,9 @@ describe('UserModule (e2e)', () => {
     app = module.createNestApplication();
     // * 찐 User Repository의 토큰을 받아와 테스트용 usersRepository 구현
     usersRepository = module.get<Repository<User>>(getRepositoryToken(User));
+    verificationRepository = module.get<Repository<Verification>>(
+      getRepositoryToken(Verification),
+    );
     await app.init();
   });
 
@@ -50,11 +66,8 @@ describe('UserModule (e2e)', () => {
   describe('createAccount', () => {
     it('should create account', () => {
       // * DB 들어가서 계속 새로고침 하다보면 table 생겼다가 DB가 비워지는것을 확인할 수 있다.
-      return (
-        request(app.getHttpServer())
-          .post(GRAPHQL_ENDPOINT)
-          .send({
-            query: `mutation {
+
+      return publicTest(`mutation {
                     createAccount(input:{
                       email:"${testUser.email}",
                       password:"${testUser.password}",
@@ -62,26 +75,41 @@ describe('UserModule (e2e)', () => {
                     }){
                       error, ok
                     }
-                  }`,
-          })
-          /**
-           * * ==> 즉, response 바로 테스트 가능
-           */
-          .expect(200)
-          .expect((res) => {
-            expect(res.body.data.createAccount.ok).toBe(true);
-            expect(res.body.data.createAccount.error).toBe(null);
-          })
-      );
+                  }`)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.createAccount.ok).toBe(true);
+          expect(res.body.data.createAccount.error).toBe(null);
+        });
+
+      // return (
+      //   request(app.getHttpServer())
+      //     .post(GRAPHQL_ENDPOINT)
+      //     .send({
+      //       query: `mutation {
+      //               createAccount(input:{
+      //                 email:"${testUser.email}",
+      //                 password:"${testUser.password}",
+      //                 role: Owner
+      //               }){
+      //                 error, ok
+      //               }
+      //             }`,
+      //     })
+      //     /**
+      //      * * ==> 즉, response 바로 테스트 가능
+      //      */
+      //     .expect(200)
+      //     .expect((res) => {
+      //       expect(res.body.data.createAccount.ok).toBe(true);
+      //       expect(res.body.data.createAccount.error).toBe(null);
+      //     })
+      //);
     });
 
     // * 이미 존재하는 계정에 대한 테스트기 때문에 true인 경우 먼저 테스트하고 진행해야 한다.
     it('should fail if account already exists', () => {
-      return (
-        request(app.getHttpServer())
-          .post(GRAPHQL_ENDPOINT)
-          .send({
-            query: `mutation {
+      return publicTest(`mutation {
                     createAccount(input:{
                       email:"${testUser.email}",
                       password:"${testUser.password}",
@@ -89,19 +117,38 @@ describe('UserModule (e2e)', () => {
                     }){
                       error, ok
                     }
-                  }`,
-          })
-          /**
-           * * ==> 즉, response 바로 테스트 가능
-           */
-          .expect(200)
-          .expect((res) => {
-            expect(res.body.data.createAccount.ok).toBe(false);
-            expect(res.body.data.createAccount.error).toEqual(
-              expect.any(String),
-            );
-          })
-      );
+                  }`)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.createAccount.ok).toBe(false);
+          expect(res.body.data.createAccount.error).toEqual(expect.any(String));
+        });
+
+      // return (
+      //   request(app.getHttpServer())
+      //     .post(GRAPHQL_ENDPOINT)
+      //     .send({
+      //       query: `mutation {
+      //               createAccount(input:{
+      //                 email:"${testUser.email}",
+      //                 password:"${testUser.password}",
+      //                 role: Owner
+      //               }){
+      //                 error, ok
+      //               }
+      //             }`,
+      //     })
+      //     /**
+      //      * * ==> 즉, response 바로 테스트 가능
+      //      */
+      //     .expect(200)
+      //     .expect((res) => {
+      //       expect(res.body.data.createAccount.ok).toBe(false);
+      //       expect(res.body.data.createAccount.error).toEqual(
+      //         expect.any(String),
+      //       );
+      //     })
+      // );
     });
   });
   describe('login', () => {
@@ -292,6 +339,131 @@ describe('UserModule (e2e)', () => {
         });
     });
   });
-  it.todo('verifyEmail');
-  it.todo('editProfile');
+  describe('editProfile', () => {
+    const NEW_EMAIL = 'nico@new.com';
+    it('should change email', () => {
+      return (
+        request(app.getHttpServer())
+          .post(GRAPHQL_ENDPOINT)
+          .set('x-jwt', jwtToken)
+          .send({
+            query: `
+            mutation {
+              editProfile(input: {
+                email: "${NEW_EMAIL}"
+              }) {
+                error, ok
+              }
+            }
+          `,
+          })
+          .expect(200)
+          .expect((res) => {
+            const {
+              body: {
+                data: {
+                  editProfile: { ok, error },
+                },
+              },
+            } = res;
+            // * OneToOne 문제 발생 > verification이 중복되기 때문에 service에서 verification delete 처리 필요
+            expect(ok).toBe(true);
+            expect(error).toBe(null);
+          })
+          // * then으로 연결해, 테스트를 추가할 수 있다.
+          // * then을 이용해 메인 테스트 뒤에 하고 싶은 테스트를 연결해 붙일 수 있다.
+          // * it을 이용해 테스트를 넣어도 상관없다
+          .then(() => {
+            return request(app.getHttpServer())
+              .post(GRAPHQL_ENDPOINT)
+              .set('X-JWT', jwtToken)
+              .send({
+                query: `
+                  {
+                    me  {
+                       email
+                    } 
+                  }     
+                 `,
+              })
+              .expect(200)
+              .expect((res) => {
+                const {
+                  body: {
+                    data: {
+                      me: { email },
+                    },
+                  },
+                } = res;
+                console.log('res.body: ', res.body);
+                // * 새로 입력한 NEW_EMAIL 값이 출력되는지 확인 필요
+                expect(email).toBe(NEW_EMAIL);
+              });
+          })
+      );
+    });
+  });
+  describe('verifyEmail', () => {
+    let verificationCode: string;
+    beforeAll(async () => {
+      // * Verification Entity의 Repoisitory를 이용해 가져온 Verification 중 가장 첫번째 값을 verification에 저장
+      const [verification] = await verificationRepository.find();
+      console.log('verification: ', verification); // *id가 2인 값(verification 테이블에서는 첫번째값)
+      verificationCode = verification.code;
+    });
+    it('should verify email', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .send({
+          query: `
+              mutation {
+                verifyEmail(input:{
+                  code: "${verificationCode}"
+                }) {
+                  error, ok
+                }
+              }
+          `,
+        })
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                verifyEmail: { ok, error },
+              },
+            },
+          } = res;
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+        });
+    });
+    it('should fail on wrong verification code not found', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .send({
+          query: `
+              mutation {
+                verifyEmail(input:{
+                  code: "AnyWrongString"
+                }) {
+                  error, ok
+                }
+              }
+          `,
+        })
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                verifyEmail: { ok, error },
+              },
+            },
+          } = res;
+          expect(ok).toBe(false);
+          expect(error).toBe('Verification not found');
+        });
+    });
+  });
 });
