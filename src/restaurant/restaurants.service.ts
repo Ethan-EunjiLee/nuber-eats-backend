@@ -1,27 +1,27 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { OldCreateRestaurantDto } from './dtos/create-restaurant.dto';
-import { OldUpdateRestaurantDto } from './dtos/update-restaurant.dto';
-import { OldRestaurant } from './entities/restaurant.entity';
+import { CreateRestaurantDto } from './dtos/create-restaurant.dto';
+import { UpdateRestaurantDto } from './dtos/update-restaurant.dto';
+import { Restaurant } from './entities/restaurant.entity';
 
 @Injectable()
-export class OldRestaurantService {
+export class RestaurantService {
   constructor(
     // * Repository 주입 - Restaurant Module에서 TypeOrmModule.forFeature()에서 정의된 Repository
     // * Entity 이름 필수 입력 필요
-    @InjectRepository(OldRestaurant)
-    private readonly restaurants: Repository<OldRestaurant>,
+    @InjectRepository(Restaurant)
+    private readonly restaurants: Repository<Restaurant>,
   ) {}
   // ! 전체 가져오기
-  getAll(): Promise<OldRestaurant[]> {
+  getAll(): Promise<Restaurant[]> {
     // * Repository의 find()는 비동기라 Promise 리턴
     return this.restaurants.find();
   }
   // ! 레스토랑 생성
   createRestaurant(
-    createRestaurntDto: OldCreateRestaurantDto,
-  ): Promise<OldRestaurant> {
+    createRestaurntDto: CreateRestaurantDto,
+  ): Promise<Restaurant> {
     /**
      * * const newRestaurant = new Restaurant();
      * * newRestaurant.name = createRestaurntDto.name;
@@ -40,7 +40,7 @@ export class OldRestaurantService {
 
   // ! 레스토랑 업데이트
   // * { id, data }: 넘어온 updateRestaurantDto에서 id, data 값을 각각 바로 변수로 가져온다.
-  updateRestaurant({ id, data }: OldUpdateRestaurantDto) {
+  updateRestaurant({ id, data }: UpdateRestaurantDto) {
     // * { ...data }: data의 각각 변수들을 가져온다.
     return this.restaurants.update(id, { ...data });
     /**

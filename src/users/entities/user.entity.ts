@@ -5,17 +5,11 @@ import {
   registerEnumType,
 } from '@nestjs/graphql';
 import { CoreEntity } from 'src/common/entities/core.entity';
-import { BeforeInsert, BeforeUpdate, Column, Entity } from 'typeorm';
-import { UsersModule } from '../users.module';
+import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { InternalServerErrorException } from '@nestjs/common';
-import {
-  IsBoolean,
-  IsEmail,
-  IsEnum,
-  IsString,
-  isString,
-} from 'class-validator';
+import { IsBoolean, IsEmail, IsEnum } from 'class-validator';
+import { Restaurant } from '../../restaurant/entities/restaurant.entity';
 
 /**
  * * type으로 설정된 UserRole을 enum으로 변경
@@ -38,7 +32,10 @@ registerEnumType(UserRole, { name: 'UserRole' });
  * ! User에만 해당되는 내용을 다루는 Entity
  * * 공통되는 부분은 CommonModule에서 제작
  */
-@InputType({ isAbstract: true }) // * GraphQL
+
+// * abstract 타입이기 때문에 playground의 schema탭에서 확인할 수 없으나, InputType name을 따로 설정했기 때문에 컴퓨터에서는 다르게 인식된다... 뭔소리임?
+// * InputType의 이름을 다르게 설정!
+@InputType('UserInputType', { isAbstract: true }) // * GraphQL
 @ObjectType() // * GraphQL
 @Entity() // * Postgres
 export class User extends CoreEntity {
@@ -63,6 +60,12 @@ export class User extends CoreEntity {
   @Field((type) => Boolean)
   @IsBoolean()
   verified: boolean;
+
+  // * (restaurant) => restaurant.owner:: 반대편에 해당되는 내용
+  // * User(owner)가 가진 레스토랑은 있을 수도, 없을 수도
+  @OneToMany(() => Restaurant, (restaurant) => restaurant.owner)
+  @Field((type) => [Restaurant])
+  restaurants: Restaurant[];
 
   @BeforeInsert() // * db에 넣기 전에 비밀번호 암호화
   @BeforeUpdate() // * 업데이트전에 비밀번호 암호화, 그러나, verifyEmail 메소드에서 save()를 통해 verified를 변경하는 과정에서 또 암호화 발생
