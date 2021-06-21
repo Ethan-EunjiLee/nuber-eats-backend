@@ -16,15 +16,21 @@ import { Restaurant } from './restaurant.entity';
  */
 export class Category extends CoreEntity {
   @Field((type) => String)
-  @Column()
+  @Column({ unique: true })
   @IsString()
   @Length(5)
   name: string;
 
-  @Field((type) => String)
-  @Column()
+  //* 카테고리를 만들었을 때, 꼭 이미지까지 추가하란 법은 없으니까
+  @Field((type) => String, { nullable: true })
+  @Column({ nullable: true })
   @IsString()
   coverImage: string;
+
+  @Field((type) => String)
+  @Column({ unique: true })
+  @IsString()
+  slug: string;
 
   // * 1개의 카테고리는 여러개의 Restaurant를 가질 수 있다.
   // * restaurant => restaurant.category:: 반대쪽 entity에 대해 설명! 반대 entity의 category 속성과 매칭된다.

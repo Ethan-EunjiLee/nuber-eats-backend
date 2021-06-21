@@ -1,5 +1,5 @@
 import { Field, InputType, ObjectType } from '@nestjs/graphql';
-import { Entity, Column, ManyToOne, OneToMany } from 'typeorm';
+import { Entity, Column, ManyToOne } from 'typeorm';
 import { IsString, Length } from 'class-validator';
 import { CoreEntity } from '../../common/entities/core.entity';
 import { Category } from './category.entity';
@@ -39,8 +39,11 @@ export class Restaurant extends CoreEntity {
 
   // * 모든 레스토랑은 owner가 필요하기 때문에 nullable: fase
   // * User는 여러개의 restaurant을 가질 수 있지만, restaurant는 1개의 user만 owner로 설정 가능
-  // * 레스토랑은 반드시 owner가 설정됭어ㅑ 한다.
-  @ManyToOne((type) => User, (user) => user.restaurants)
+  // * 레스토랑은 반드시 owner가 설정되어야한다.
+  // * { onDelete: 'CASCADE' } User 삭제되면 Restaurant도 삭제한다
+  @ManyToOne((type) => User, (user) => user.restaurants, {
+    onDelete: 'CASCADE',
+  })
   @Field((type) => User)
   owner: User;
 }

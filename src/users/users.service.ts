@@ -143,8 +143,6 @@ export class UsersService {
         error: 'User not found',
       };
     }
-
-    //return this.users.findOne({ id });
   }
 
   /**

@@ -18,12 +18,12 @@ import { Restaurant } from '../../restaurant/entities/restaurant.entity';
  * * [주의] Column(enum: UserRole)보다 밑에 적혀있으면 에러 발생
  * *
  */
-enum UserRole {
-  Client,
-  Owner,
-  Delivery,
-}
 
+export enum UserRole {
+  Client = 'Client',
+  Owner = 'Owner',
+  Delivery = 'Delivery',
+}
 // * GraphQL에 enum 등록하기
 // * => 이렇게 등록하고 나면 @Field 데코레이터에서 enum을 등록할 수 있다.
 registerEnumType(UserRole, { name: 'UserRole' });

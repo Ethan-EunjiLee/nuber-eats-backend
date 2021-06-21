@@ -10,8 +10,9 @@ import { EditProfileInput, EditProfileOutput } from './dtos/edit-profile.dto';
 import { LoginInput, LoginOutput } from './dtos/login.dto';
 import { UserProfileInput, UserProfileOutput } from './dtos/user-profile.dto';
 import { VerifyEmailInput, VerifyEmailOutput } from './dtos/verify-email.dto';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 import { UsersService } from './users.service';
+import { Role } from '../auth/role.decorator';
 
 @Resolver((of) => User) // * User와 관련된 Resolver임을 명시, 괄호 내부 생략 가능
 export class UsersResolver {
@@ -40,8 +41,8 @@ export class UsersResolver {
 
   // ! AuthUser: 현재 로그인한 사람의 정보 출력
   @Query((returns) => User)
-  @UseGuards(AuthGuard)
-  // * me(@AuthUser() authUser:User) {  이거로하면 에러가 안뜬다... 어디서 ok가 붙어오는지 모르겠다!
+  // @UseGuards(AuthGuard)
+  @Role(['Any']) // * 모든 User는 누구나 자신의 정보를 볼 수 있다.
   me(@AuthUser() authUser: User) {
     console.log('me authUser: ', authUser);
 
@@ -56,8 +57,9 @@ export class UsersResolver {
   }
 
   // ! 프로필 보기
-  @UseGuards(AuthGuard)
+  //@UseGuards(AuthGuard)
   @Query((returns) => UserProfileOutput)
+  @Role(['Any'])
   async userProfile(
     @Args() userProfileInput: UserProfileInput,
   ): Promise<UserProfileOutput> {
@@ -66,7 +68,8 @@ export class UsersResolver {
 
   // ! userProfile 수정
   // * AuthUser: 현재 로그인한 사람의 정보 출력
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
+  @Role(['Any'])
   @Mutation((returns) => EditProfileOutput)
   async editProfile(
     @AuthUser() authUser: User,
