@@ -55,6 +55,7 @@ export class UsersService {
         // * => thorw Error(): 이런 방식도 당연 가능
         return { ok: false, error: 'There is a user with that eamil already' }; // * 함수 탈출
       }
+      console.log('here');
       // * 2. create user (TODO: not yet: & hash password)
       const user = await this.users.save(
         this.users.create({ email, password, role }),

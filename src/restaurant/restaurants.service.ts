@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 
 import { Restaurant } from './entities/restaurant.entity';
 import { User } from '../users/entities/user.entity';
@@ -21,6 +21,12 @@ import {
 import { AllCategoriesOutput } from './dtos/all-categories.dto';
 import { CategoryInput, CategoryOutput } from './dtos/category.dto';
 import { RestaurantsInput, RestaurantsOutput } from './dtos/restaurants.dto';
+import { RestaurantInput, RestaurantOutput } from './dtos/restaurant.dto';
+import { Args, Query } from '@nestjs/graphql';
+import {
+  SearchRestaurantInput,
+  SearchRestaurantOutput,
+} from './dtos/search-restaurant.dto';
 
 @Injectable()
 export class RestaurantService {
@@ -236,7 +242,7 @@ export class RestaurantService {
       const [restaurants, totalResults] = await this.restaurants.findAndCount({
         skip: (page - 1) * 25,
         take: 25,
-        relations: ['category'], // * relation은 가져오고 싶으면 꼭, find할 때 지정을 해줘야한다.
+        relations: ['category', 'owner'], // * relation은 가져오고 싶으면 꼭, find할 때 지정을 해줘야한다. => 내부 객체의 relation을 끌어올 경우도 똑같이 입력해서 처리 가능
       });
       console.log('totalResults: ', totalResults);
       return {
@@ -249,6 +255,51 @@ export class RestaurantService {
       return {
         ok: false,
         error: 'Could not load restaurants',
+      };
+    }
+  }
+
+  async findRestaurantById({
+    restaurantId,
+  }: RestaurantInput): Promise<RestaurantOutput> {
+    try {
+      const restaurant = await this.restaurants.findOne(restaurantId);
+      if (!restaurant) {
+        return {
+          ok: false,
+          error: 'Restaurant not found',
+        };
+      }
+      return {
+        ok: true,
+        restaurant,
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: 'Could not find restaurant',
+      };
+    }
+  }
+
+  // * Search Restaurant
+  async searchRestaurantByName({
+    query,
+    page,
+  }: SearchRestaurantInput): Promise<SearchRestaurantOutput> {
+    try {
+      // * findAndCount(): 배열 형태로 조건에 대한 검색값, 조건과 상관없는 전체 검색값이 순서대로 출력된다.
+      // * 각각의 값을 restaurants, totalResults에 넣어주었다.
+      const [restaurants, totalResults] = await this.restaurants.findAndCount({
+        where: { name: Like(`% query %`) }, // * query가 들어간 모든 값을 가져온다.
+        skip: (page - 1) * 25,
+        take: 25,
+        relations: ['category', 'owner'], // * relation은 가져오고 싶으면 꼭, find할 때 지정을 해줘야한다. => 내부 객체의 relation을 끌어올 경우도 똑같이 입력해서 처리 가능
+      });
+    } catch (error) {
+      return {
+        ok: false,
+        error: 'Could not search for restaurants',
       };
     }
   }
