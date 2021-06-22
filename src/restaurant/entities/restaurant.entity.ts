@@ -1,5 +1,5 @@
 import { Field, InputType, ObjectType } from '@nestjs/graphql';
-import { Entity, Column, ManyToOne } from 'typeorm';
+import { Entity, Column, ManyToOne, RelationId } from 'typeorm';
 import { IsString, Length } from 'class-validator';
 import { CoreEntity } from '../../common/entities/core.entity';
 import { Category } from './category.entity';
@@ -19,9 +19,9 @@ export class Restaurant extends CoreEntity {
   @Field((type) => String)
   @Column()
   @IsString()
-  coverImage: string;
+  coverImg: string;
 
-  @Field((tyep) => String, { defaultValue: '강남' })
+  @Field((tyep) => String)
   @Column()
   @IsString()
   address: string;
@@ -46,4 +46,9 @@ export class Restaurant extends CoreEntity {
   })
   @Field((type) => User)
   owner: User;
+
+  // * Relation 중 User와의 관계에서 user의 id값을 가져오고 싶을때
+  // * DB테이블에 칼럼으로 뜨는건 아니다.
+  @RelationId((restaurant: Restaurant) => restaurant.owner)
+  ownerId: number;
 }

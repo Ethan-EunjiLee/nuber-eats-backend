@@ -39,7 +39,7 @@ export class UsersResolver {
     }
   }
 
-  // ! AuthUser: 현재 로그인한 사람의 정보 출력
+  // ! AuthUser: 현재 로그인한 사람의 정보 출력 -> 로그인되어야만 본인의 정보를 볼 수 있다.
   @Query((returns) => User)
   // @UseGuards(AuthGuard)
   @Role(['Any']) // * 모든 User는 누구나 자신의 정보를 볼 수 있다.

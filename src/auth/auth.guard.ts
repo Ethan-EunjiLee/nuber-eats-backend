@@ -33,6 +33,7 @@ export class AuthGuard implements CanActivate {
       // * metadata가 설정된 경우 확인 필요, 없는 경우에는 확인 X
       return false; // * return false: 어디서 사용되더라도 request를 막는다.
     }
+    // * metadata가 Any로 설정된 경우: 로그인만 되어있으면 누구나 접근 가능
     if (roles.includes('Any')) {
       return true;
     }

@@ -37,6 +37,6 @@ export class Category extends CoreEntity {
   // * 이 부분은 Category 테이블의 행으로 추가되지 않는다! 관계 표시용
   // * 카테고리에 해당되는 레스토랑은 있을 수도, 없을 수도
   @OneToMany((type) => Restaurant, (restaurant) => restaurant.category)
-  @Field((type) => [Restaurant])
-  restaurants: Restaurant[];
+  @Field((type) => [Restaurant], { nullable: true })
+  restaurants?: Restaurant[];
 }

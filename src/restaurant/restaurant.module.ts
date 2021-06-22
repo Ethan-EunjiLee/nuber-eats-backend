@@ -1,15 +1,15 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Restaurant } from './entities/restaurant.entity';
-import { RestaurnatResolver } from './restaurants.resolver';
+import { CategoryResolver, RestaurnatResolver } from './restaurants.resolver';
 import { RestaurantService } from './restaurants.service';
-import { Category } from './entities/category.entity';
+import { CategoryRepository } from './repositories/category.repository';
 
 /**
- * ! 테스트 Module
+ * * CustomRepository를 사용하기 위해서 forFeature()에 기본 Entity를 넣지말고, 직접 Repository 상속받아 구현한 CustomRepository를 대신 넣어준다.
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([Restaurant, Category])],
-  providers: [RestaurnatResolver, RestaurantService],
+  imports: [TypeOrmModule.forFeature([Restaurant, CategoryRepository])],
+  providers: [RestaurnatResolver, RestaurantService, CategoryResolver],
 })
 export class RestaurantsModule {}
