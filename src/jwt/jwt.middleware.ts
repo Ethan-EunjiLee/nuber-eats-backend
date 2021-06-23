@@ -3,6 +3,8 @@ import { NextFunction, Request, Response } from 'express';
 import { UsersService } from 'src/users/users.service';
 import { JwtService } from './jwt.service';
 
+// * request에서 jwt토큰 찾아서 user를 찾은후 request에 넣어서 코드를 진행시킨다.
+
 @Injectable() // * 이 데코레이터가 있어야 dependecny injection 가능
 //* 만약, 클래스만의 기능을 안쓴다면 function으로 만들어줘도 무방
 export class JwtMiddleware implements NestMiddleware {

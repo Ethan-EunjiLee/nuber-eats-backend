@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Like, Repository } from 'typeorm';
+import { Repository, Raw } from 'typeorm';
 
 import { Restaurant } from './entities/restaurant.entity';
 import { User } from '../users/entities/user.entity';
@@ -22,11 +22,14 @@ import { AllCategoriesOutput } from './dtos/all-categories.dto';
 import { CategoryInput, CategoryOutput } from './dtos/category.dto';
 import { RestaurantsInput, RestaurantsOutput } from './dtos/restaurants.dto';
 import { RestaurantInput, RestaurantOutput } from './dtos/restaurant.dto';
-import { Args, Query } from '@nestjs/graphql';
 import {
   SearchRestaurantInput,
   SearchRestaurantOutput,
 } from './dtos/search-restaurant.dto';
+import { CreateDishInput, CreateDishOutput } from './dtos/create-dish.dto';
+import { Dish } from './entities/dish.entity';
+import { EditDishInput, EditDishOutput } from './dtos/edit-dish.dto';
+import { DeleteDishInput, DeleteDishOutput } from './dtos/delete-dish.dto';
 
 @Injectable()
 export class RestaurantService {
@@ -36,6 +39,8 @@ export class RestaurantService {
     private readonly categories: CategoryRepository,
     @InjectRepository(Restaurant)
     private readonly restaurants: Repository<Restaurant>,
+    @InjectRepository(Dish)
+    private readonly dishes: Repository<Dish>,
   ) {}
 
   // ! 레스토랑 생성
@@ -263,7 +268,9 @@ export class RestaurantService {
     restaurantId,
   }: RestaurantInput): Promise<RestaurantOutput> {
     try {
-      const restaurant = await this.restaurants.findOne(restaurantId);
+      const restaurant = await this.restaurants.findOne(restaurantId, {
+        relations: ['menu', 'category'], // * relations를 이용해 관계가 있는 테이블을 불러올 때는 불러와질 테이블말고 부르는 테이블에 적용된 변수명으로 부른다.
+      });
       if (!restaurant) {
         return {
           ok: false,
@@ -282,6 +289,7 @@ export class RestaurantService {
     }
   }
 
+  // TODO: pagination을 위한 repository 만들기
   // * Search Restaurant
   async searchRestaurantByName({
     query,
@@ -291,15 +299,138 @@ export class RestaurantService {
       // * findAndCount(): 배열 형태로 조건에 대한 검색값, 조건과 상관없는 전체 검색값이 순서대로 출력된다.
       // * 각각의 값을 restaurants, totalResults에 넣어주었다.
       const [restaurants, totalResults] = await this.restaurants.findAndCount({
-        where: { name: Like(`% query %`) }, // * query가 들어간 모든 값을 가져온다.
+        // * where: { name: ILike(`%${query}%`) }, // * query가 들어간 모든 값을 가져온다.
+        where: {
+          name: Raw((name) => `${name} ILike '%${query}%'`), // * Raw() raw query 실행하게 해준다.
+        },
         skip: (page - 1) * 25,
         take: 25,
         relations: ['category', 'owner'], // * relation은 가져오고 싶으면 꼭, find할 때 지정을 해줘야한다. => 내부 객체의 relation을 끌어올 경우도 똑같이 입력해서 처리 가능
       });
+      return {
+        ok: true,
+        restaurants,
+        totalResults,
+        totalPages: Math.ceil(totalResults / 25),
+      };
     } catch (error) {
       return {
         ok: false,
         error: 'Could not search for restaurants',
+      };
+    }
+  }
+
+  async createDish(
+    owner: User,
+    createDishInput: CreateDishInput,
+  ): Promise<CreateDishOutput> {
+    try {
+      // * [1] Dish 생성할 Restaurant 존재 여부 체크
+      const restaurant = await this.restaurants.findOne(
+        createDishInput.restaurantId,
+      );
+      if (!restaurant) {
+        return {
+          ok: false,
+          error: 'Restaurant not found',
+        };
+      }
+      // * [2] owner id와 restaurant의 owner id 체크
+      if (owner.id !== restaurant.ownerId) {
+        return {
+          ok: false,
+          error: 'you cannot do that',
+        };
+      }
+      const dish = await this.dishes.save(
+        // * Dish에 설정해둔 ManyToOne은 nullable: true가 기본! 그래서 없어도 에러가 발생하지 않았다.
+        // * restaurant값에 맞춰서 restaurantId도 typeorm이 알아서 넣어준다.
+        this.dishes.create({ ...createDishInput, restaurant }),
+        // this.dishes.create({ ...createDishInput, restaurant }),
+      );
+      console.log('dish:::: ', dish);
+      return {
+        ok: true,
+      };
+    } catch (error) {
+      console.log('error: ', error);
+      return {
+        ok: false,
+        error: 'Could not create dish',
+      };
+    }
+  }
+
+  async editDish(
+    owner: User,
+    editDishInput: EditDishInput,
+  ): Promise<EditDishOutput> {
+    try {
+      // * [1] dishID값이 일치하는 dish 찾기
+      const dish = await this.dishes.findOne(editDishInput.dishId, {
+        relations: ['restaurant'],
+      });
+      if (!dish) {
+        return {
+          ok: false,
+          error: 'Dish not found',
+        };
+      }
+      // * [2] owner 일치 여부 확인
+      if (owner.id !== dish.restaurant.ownerId) {
+        return {
+          ok: false,
+          error: 'you cannot do that',
+        };
+      }
+      // * [3] dish 수정
+      await this.dishes.save({
+        id: editDishInput.dishId,
+        ...editDishInput, // * editDishInput에 있는 모든 정보가 업데이트 된다. 없는 값은 알아서 스킵된다.
+      });
+      return {
+        ok: true,
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: 'Could not edit dish',
+      };
+    }
+  }
+  async deleteDish(
+    owner: User,
+    { dishId }: DeleteDishInput,
+  ): Promise<DeleteDishOutput> {
+    try {
+      // * [1] dishID값이 일치하는 dish 찾기
+      const dish = await this.dishes.findOne(dishId, {
+        relations: ['restaurant'],
+      });
+      if (!dish) {
+        return {
+          ok: false,
+          error: 'Dish not found',
+        };
+      }
+      // * [2] owner 일치 여부 확인
+      if (owner.id !== dish.restaurant.ownerId) {
+        return {
+          ok: false,
+          error: 'you cannot do that',
+        };
+      }
+      // * [3] dish 삭제
+      await this.dishes.delete(dishId);
+
+      return {
+        ok: true,
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: 'Could not delete dish',
       };
     }
   }

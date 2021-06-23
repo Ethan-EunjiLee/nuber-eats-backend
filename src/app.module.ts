@@ -19,6 +19,7 @@ import { MailModule } from './mail/mail.module';
 import { RestaurantsModule } from './restaurant/restaurant.module';
 import { Restaurant } from './restaurant/entities/restaurant.entity';
 import { Category } from './restaurant/entities/category.entity';
+import { Dish } from './restaurant/entities/dish.entity';
 // * typescript 패키지 import 방식
 // * import Joi from 'joi';
 // * javscript로 작성된 패키지를 typescript 방식으로 import하면 undefined로 나온다.
@@ -83,6 +84,7 @@ import { Category } from './restaurant/entities/category.entity';
         Verification,
         Restaurant,
         Category,
+        Dish,
       ],
     }),
     // * graphQL 설정

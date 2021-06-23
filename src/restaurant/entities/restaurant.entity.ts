@@ -1,9 +1,10 @@
 import { Field, InputType, ObjectType } from '@nestjs/graphql';
-import { Entity, Column, ManyToOne, RelationId } from 'typeorm';
+import { Entity, Column, ManyToOne, RelationId, OneToMany } from 'typeorm';
 import { IsString, Length } from 'class-validator';
 import { CoreEntity } from '../../common/entities/core.entity';
 import { Category } from './category.entity';
 import { User } from '../../users/entities/user.entity';
+import { Dish } from './dish.entity';
 
 @InputType('RestaurantInputType', { isAbstract: true })
 @Entity()
@@ -51,4 +52,11 @@ export class Restaurant extends CoreEntity {
   // * DB테이블에 칼럼으로 뜨는건 아니다.
   @RelationId((restaurant: Restaurant) => restaurant.owner)
   ownerId: number;
+
+  // * Dish와의 관계 정의(Restaurant는 많은 Dish를 가지고, Dish는 한 개의 Restaurant를 가진다.)
+  // * (dish) => dish.restaurant
+  // * :: 반대쪽에서는 dish.restaurant를 통해 Restaurant Entity와 연결한다.(restaurant는 Dish Entity에서 선언한 변수명)
+  @OneToMany((type) => Dish, (dish) => dish.restaurant)
+  @Field((type) => [Dish])
+  menu: Dish[];
 }
