@@ -5,6 +5,7 @@ import { CoreEntity } from '../../common/entities/core.entity';
 import { Category } from './category.entity';
 import { User } from '../../users/entities/user.entity';
 import { Dish } from './dish.entity';
+import { Order } from '../../orders/entity/order.entity';
 
 @InputType('RestaurantInputType', { isAbstract: true })
 @Entity()
@@ -59,4 +60,9 @@ export class Restaurant extends CoreEntity {
   @OneToMany((type) => Dish, (dish) => dish.restaurant)
   @Field((type) => [Dish])
   menu: Dish[];
+
+  // * 1명의 restaurnat는 여러 order를 가질 수 있기 때문에 OneToMany
+  @Field((type) => [Order])
+  @OneToMany(() => Order, (order) => order.restaurant)
+  orders: Order[];
 }

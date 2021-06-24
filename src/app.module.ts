@@ -20,6 +20,9 @@ import { RestaurantsModule } from './restaurant/restaurant.module';
 import { Restaurant } from './restaurant/entities/restaurant.entity';
 import { Category } from './restaurant/entities/category.entity';
 import { Dish } from './restaurant/entities/dish.entity';
+import { OrdersModule } from './orders/orders.module';
+import { Order } from './orders/entity/order.entity';
+import { OrderItem } from './orders/entity/order-item.entity';
 // * typescript 패키지 import 방식
 // * import Joi from 'joi';
 // * javscript로 작성된 패키지를 typescript 방식으로 import하면 undefined로 나온다.
@@ -85,6 +88,8 @@ import { Dish } from './restaurant/entities/dish.entity';
         Restaurant,
         Category,
         Dish,
+        Order,
+        OrderItem,
       ],
     }),
     // * graphQL 설정
@@ -105,6 +110,7 @@ import { Dish } from './restaurant/entities/dish.entity';
     // RestaurantsModule, => 테스트용
     UsersModule,
     RestaurantsModule,
+    OrdersModule,
   ], // == new ApolloServer({기타 설정})
   controllers: [],
   providers: [],

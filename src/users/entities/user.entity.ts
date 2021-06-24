@@ -10,6 +10,7 @@ import * as bcrypt from 'bcrypt';
 import { InternalServerErrorException } from '@nestjs/common';
 import { IsBoolean, IsEmail, IsEnum } from 'class-validator';
 import { Restaurant } from '../../restaurant/entities/restaurant.entity';
+import { Order } from '../../orders/entity/order.entity';
 
 /**
  * * type으로 설정된 UserRole을 enum으로 변경
@@ -66,6 +67,18 @@ export class User extends CoreEntity {
   @OneToMany(() => Restaurant, (restaurant) => restaurant.owner)
   @Field((type) => [Restaurant])
   restaurants: Restaurant[];
+
+  // * 배달 시킨 유저가 보는 Order Entity
+  // * 1명의 user는 여러 order를 가질 수 있기 때문에 OneToMany
+  @Field((type) => [Order])
+  @OneToMany(() => Order, (order) => order.customer)
+  orders: Order[];
+
+  // * 배달원 유저가 보는 Order Entity
+  // * 1명의 delivery user는 여러 order를 가질 수 있기 때문에 OneToMany
+  @Field((type) => [Order])
+  @OneToMany(() => Order, (order) => order.driver)
+  rides: Order[];
 
   @BeforeInsert() // * db에 넣기 전에 비밀번호 암호화
   @BeforeUpdate() // * 업데이트전에 비밀번호 암호화, 그러나, verifyEmail 메소드에서 save()를 통해 verified를 변경하는 과정에서 또 암호화 발생
