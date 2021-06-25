@@ -7,7 +7,7 @@ import { Restaurant } from './restaurant.entity';
 // * choices가 주문의 값을 변경하는 경우 사용
 @InputType('DishChoiceInputType', { isAbstract: true })
 @ObjectType()
-class DishChoice {
+export class DishChoice {
   @Field((type) => String)
   name: string;
 
