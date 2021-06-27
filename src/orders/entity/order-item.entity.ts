@@ -7,14 +7,15 @@ import {
   DishOption,
 } from '../../restaurant/entities/dish.entity';
 
-@ObjectType('OrderItemOptionInputType')
-@InputType()
+@InputType('OrderItemOptionInputType', { isAbstract: true }) // * isAbstract: true => 스키마 등록을 막아준다.
+@ObjectType()
 export class OrderItemOption {
   @Field((type) => String)
   name: string;
 
-  @Field((type) => DishChoice, { nullable: true })
-  choice?: DishChoice;
+  // * 기존의 DishChoice인 경우 User에게 얼마 낼건지를 물어보는꼴... 그러면 안되기 때문에 string으로만 변경
+  @Field((type) => String, { nullable: true })
+  choice?: string;
 
   @Field((type) => Int, { nullable: true })
   extra?: number;

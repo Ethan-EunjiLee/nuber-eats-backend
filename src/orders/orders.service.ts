@@ -5,6 +5,8 @@ import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { CreateOrderInput, CreateOrderOutput } from './dtos/create-order.dto';
 import { Restaurant } from '../restaurant/entities/restaurant.entity';
+import { OrderItem } from './entity/order-item.entity';
+import { Dish } from '../restaurant/entities/dish.entity';
 
 @Injectable()
 export class OrderService {
@@ -12,6 +14,10 @@ export class OrderService {
     @InjectRepository(Order) private readonly orders: Repository<Order>,
     @InjectRepository(Restaurant)
     private readonly restaurants: Repository<Restaurant>,
+    @InjectRepository(OrderItem)
+    private readonly orderItems: Repository<OrderItem>,
+    @InjectRepository(Dish)
+    private readonly dishes: Repository<Dish>,
   ) {}
 
   // * 주문 => resolver에서 @Role을 사용했기 때문에 로그인 유저임을 확신하고 코드 진행 가능
@@ -28,8 +34,23 @@ export class OrderService {
         error: 'Not found restaurant',
       };
     }
-
-    const order = await this.orders.save(this.orders.create({ customer }));
-    console.log('order: ', order);
+    console.log('items: ', items);
+    items.forEach((item) => console.log('items forEach(): ', item));
+    items.forEach(async (item) => {
+      // * 일치하는 요리 정보 찾기
+      const dish = await this.dishes.findOne(item.dishId);
+      if (!dish) {
+        // * order 전체 과정 취소
+        // * abord this whole thing
+      }
+      await this.orderItems.save(
+        this.orderItems.create({
+          dish,
+          options: item.options,
+        }),
+      );
+    });
+    //const order = await this.orders.save(this.orders.create({ customer }));
+    //console.log('order: ', order);
   }
 }
