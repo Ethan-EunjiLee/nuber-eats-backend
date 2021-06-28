@@ -16,9 +16,6 @@ export class OrderItemOption {
   // * 기존의 DishChoice인 경우 User에게 얼마 낼건지를 물어보는꼴... 그러면 안되기 때문에 string으로만 변경
   @Field((type) => String, { nullable: true })
   choice?: string;
-
-  @Field((type) => Int, { nullable: true })
-  extra?: number;
 }
 // * OrderItem은 Order에 들어가는 여러개의 음식 메뉴들을 옵션과 함께 각각으로 분리한 값
 // * 그래서 1개의 OrderItem에는 1개의 Dish만 매칭, 반대로 1개의 Dish에는 여러 OrderItem 매칭 가능
