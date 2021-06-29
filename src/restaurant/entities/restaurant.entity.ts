@@ -50,6 +50,7 @@ export class Restaurant extends CoreEntity {
   owner: User;
 
   // * Relation 중 User와의 관계에서 user의 id값을 가져오고 싶을때
+  // * relation을 load하지 않아도 id를 확인하고 싶을 때 사용
   // * DB테이블에 칼럼으로 뜨는건 아니다.
   @RelationId((restaurant: Restaurant) => restaurant.owner)
   ownerId: number;

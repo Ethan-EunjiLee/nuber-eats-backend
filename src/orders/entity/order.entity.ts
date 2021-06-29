@@ -5,7 +5,14 @@ import {
   ObjectType,
   registerEnumType,
 } from '@nestjs/graphql';
-import { Column, Entity, ManyToMany, ManyToOne, JoinTable } from 'typeorm';
+import {
+  Column,
+  Entity,
+  ManyToMany,
+  ManyToOne,
+  JoinTable,
+  RelationId,
+} from 'typeorm';
 import { CoreEntity } from '../../common/entities/core.entity';
 import { User, UserRole } from '../../users/entities/user.entity';
 import { Restaurant } from '../../restaurant/entities/restaurant.entity';
@@ -15,9 +22,10 @@ import { IsEnum, IsNumber } from 'class-validator';
 
 export enum OrderStatus {
   Pending = 'Pending', // * 대기
-  Cooking = 'Cooking', // * 요리
-  PickedUp = 'PickedUp',
-  Delivered = 'Delivered',
+  Cooking = 'Cooking', // * 요리 => 식당이 변경
+  Cooked = 'Cooked', // * 음식이 픽업을 기다리는 상태 => 식당이 변경
+  PickedUp = 'PickedUp', // * 배달원이 변경
+  Delivered = 'Delivered', // * 배달원이 변경
 }
 
 registerEnumType(OrderStatus, { name: 'OrderStatus' });
@@ -34,6 +42,10 @@ export class Order extends CoreEntity {
   })
   customer?: User;
 
+  // * 어떤 relation으로부터의 값인지를 표현해줘야한다.
+  @RelationId((order: Order) => order.customer)
+  customerId: number;
+
   // * 주문과 동시에 드라이버가 배정되는 것이 아니기 때문에 nullable: true
   @Field((type) => User, { nullable: true })
   @ManyToOne(() => User, (user) => user.rides, {
@@ -41,6 +53,10 @@ export class Order extends CoreEntity {
     nullable: true,
   })
   driver?: User;
+
+  // * 어떤 relation으로부터의 값인지를 표현해줘야한다.
+  @RelationId((order: Order) => order.driver)
+  driverId: number;
 
   // * 1개의 레스토랑은 many 주문을 가질 수 있다.
   @Field((type) => Restaurant, { nullable: true })

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Order } from './entity/order.entity';
+import { Order, OrderStatus } from './entity/order.entity';
 import { Repository } from 'typeorm';
 import { User, UserRole } from '../users/entities/user.entity';
 import { CreateOrderInput, CreateOrderOutput } from './dtos/create-order.dto';
@@ -8,6 +8,8 @@ import { Restaurant } from '../restaurant/entities/restaurant.entity';
 import { OrderItem } from './entity/order-item.entity';
 import { Dish } from '../restaurant/entities/dish.entity';
 import { GetOrdersInput, GetOrdersOutput } from './dtos/get-orders.dto';
+import { GetOrderInput, GetOrderOutput } from './dtos/get-order.dto';
+import { EditOrderInput, EditOrderOutput } from './dtos/edit-order.dto';
 
 @Injectable()
 export class OrderService {
@@ -134,15 +136,20 @@ export class OrderService {
         orders = await this.orders.find({
           where: {
             customer: user,
+            ...(status && { status }), // * status가 있는 경우만 object에 추가
           },
         });
         console.log('client');
-        console.log();
       } else if (user.role === UserRole.Delivery) {
         // * 로그인한 유저의 배달 내역 가져오기
         orders = await this.orders.find({
           where: {
             driver: user,
+            ...(status && { status }),
+            // * status가 있는 경우만 object에 추가
+            // * ...은 spresad 연산자
+            // * 자바스크립트는 {}는 코드 블럭으로 인식하기 때문에, ()로 감싸줘야 표현식으로 해석된다.
+            // * status를 입력하지 않는 경우 모든 status를 다 끌고온다.
           },
         });
         console.log('delivery');
@@ -160,6 +167,22 @@ export class OrderService {
         // * flat을 이용하면 배열을 원하는 깊이의 요소까지 외부로 끌고와 평탄하게 만들고 구멍도 제거 가능
         console.log('restaurants: ', restaurants);
         orders = restaurants.map((restaurant) => restaurant.orders).flat(1);
+        //* 따로 지정한 status가 있는 경우
+        if (status) {
+          /**
+           * * - map vs filter
+           * * - 공통점: 기존 배열은 건드리지 않으면서 요소들을 순회한 후 새로운 배열을 리턴
+           * * - 차이점
+           * *    - map: 콜백 함수가 적용된 새 요소들을 리턴
+           * *    - filter: 조건문을 만족한 요소들을 반환
+           */
+          // * orders의 값 중 status가 일치하는 값만 가져다가 다시 orders로 만든다.
+          // orders = orders.map((order) => {
+          //   if (order.status === status) return order;
+          // });
+          orders = orders.filter((order) => order.status === status);
+          console.log('ordersssss: ', orders);
+        }
         console.log('orders: ', orders);
       }
       return {
@@ -170,6 +193,115 @@ export class OrderService {
       return {
         ok: false,
         error: 'Could not get orders',
+      };
+    }
+  }
+
+  // * 주문을 볼 수 있는지 체크
+  canSeeOrder(user: User, order: Order): boolean {
+    // * order user 연관관계 체크 => 로그인한 유저가 주문자, 배달, 식당 주인이 아닌 경우 false return
+    let canSee = true;
+    if (user.role === UserRole.Client && order.customerId !== user.id) {
+      canSee = false;
+    }
+    if (user.role === UserRole.Delivery && order.driverId !== user.id) {
+      canSee = false;
+    }
+    if (user.role === UserRole.Owner && order.restaurant.ownerId !== user.id) {
+      canSee = false;
+    }
+    return canSee;
+  }
+  async getOrder(
+    user: User,
+    { id: orderId }: GetOrderInput, // * 타입 지정하는 방법과 똑같이 alias 지정 가능
+  ): Promise<GetOrderOutput> {
+    try {
+      // * id값 일치하는 order 찾기
+      const order = await this.orders.findOne(orderId, {
+        relations: ['restaurant'], // * driver, customer는 relationId를 통해 id값만 가져왔다.
+      });
+      if (!order) {
+        return {
+          ok: false,
+          error: 'Order not found',
+        };
+      }
+      // * anSeeOrder(): order user 연관관계 체크 => 로그인한 유저가 주문자, 배달, 식당 주인이 아닌 경우 false return
+      if (!this.canSeeOrder(user, order)) {
+        return {
+          ok: false,
+          error: 'you cannot see that',
+        };
+      }
+      return {
+        ok: true,
+        order,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not load order',
+      };
+    }
+  }
+  async editOrder(
+    user: User,
+    { id: orderId, status }: EditOrderInput, // * orderId alias로 활용
+  ): Promise<EditOrderOutput> {
+    try {
+      const order = await this.orders.findOne(orderId, {
+        relations: ['restaurant'],
+      });
+      // * 해당 주문이 있는지 체크
+      if (!order) {
+        return {
+          ok: false,
+          error: 'Order not found',
+        };
+      }
+      // * 이 주문을 user가 볼 수 있는지 체크
+      if (!this.canSeeOrder(user, order)) {
+        return {
+          ok: false,
+          error: 'Cannot see this',
+        };
+      }
+      // * 순서: 유저 role 확인 => status 확인 => order 업데이트
+      let canEdit = true;
+      // * 유저가 손님인 경우(주문 변경 불가)
+      if (user.role === UserRole.Client) {
+        canEdit = false;
+      }
+      // * 유저가 주인인 경우
+      if (user.role === UserRole.Owner) {
+        if (status !== OrderStatus.Cooking && status !== OrderStatus.Cooked) {
+          canEdit = false;
+        }
+      }
+      // * 유저가 배달원인 경우
+      if (user.role === UserRole.Delivery) {
+        if (
+          status !== OrderStatus.PickedUp &&
+          status !== OrderStatus.Delivered
+        ) {
+          canEdit = false;
+        }
+      }
+      if (!canEdit) {
+        return {
+          ok: false,
+          error: 'You cannot do that',
+        };
+      }
+      await this.orders.save([{ id: orderId, status }]);
+      return {
+        ok: true,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not edit',
       };
     }
   }

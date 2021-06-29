@@ -94,8 +94,11 @@ import { OrderItem } from './orders/entity/order-item.entity';
     }),
     // * graphQL 설정
     GraphQLModule.forRoot({
+      installSubscriptionHandlers: true,
       autoSchemaFile: true,
-      context: ({ req }) => ({ potato: 'potato', user: req['user'] }),
+      // context: ({ req }) => {
+      //   return { user: req['user'] };
+      // },
     }),
 
     JwtModule.forRoot({
