@@ -44,9 +44,12 @@ export class UsersResolver {
   // @UseGuards(AuthGuard)
   @Role(['Any']) // * 모든 User는 누구나 자신의 정보를 볼 수 있다.
   me(@AuthUser() authUser: User) {
+    // me(@Context() context) {
+    // console.log('context: ', context);
     console.log('me authUser: ', authUser);
 
     return authUser;
+    // return context.user;
     /**
      * * me(@Context() { potato }): 이렇게하면 context에서 원하는 값 가져올 수 있다.
      *

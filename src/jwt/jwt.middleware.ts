@@ -13,6 +13,7 @@ export class JwtMiddleware implements NestMiddleware {
     private readonly userService: UsersService,
   ) {}
 
+  // * NestMiddleware를 구현한 클래스의 경우 Request, Response 를 사용하는데, 이는 Websocket에는 없기 때문에 subscription에 사용할 수 없다.
   async use(req: Request, res: Response, next: NextFunction) {
     console.log('here is jwtMiddleware');
     // * Request, Resoponse 객체에 접근하여 원하는대로 처리

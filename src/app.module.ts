@@ -23,6 +23,7 @@ import { Dish } from './restaurant/entities/dish.entity';
 import { OrdersModule } from './orders/orders.module';
 import { Order } from './orders/entity/order.entity';
 import { OrderItem } from './orders/entity/order-item.entity';
+import { CommonModule } from './common/common.module';
 // * typescript 패키지 import 방식
 // * import Joi from 'joi';
 // * javscript로 작성된 패키지를 typescript 방식으로 import하면 undefined로 나온다.
@@ -94,11 +95,26 @@ import { OrderItem } from './orders/entity/order-item.entity';
     }),
     // * graphQL 설정
     GraphQLModule.forRoot({
-      installSubscriptionHandlers: true,
+      installSubscriptionHandlers: true, // * subscription 구현을 위해 websocket 활성화
       autoSchemaFile: true,
-      // context: ({ req }) => {
-      //   return { user: req['user'] };
-      // },
+      // * appolo server의 context를 function으로 정의하면 매 request마다 호출된다.
+      // * 여기서 return 되는 애들은 모든 resolver에서 공유해서 사용 가능
+      // * req안에는 이미 user라는 값이 있다. 우리는 이걸 resolver에서 사용하기 위해 context를 통해 공유하는 것
+      // * context내부에는 이미 req가 들어있다.
+      // * 원래는 req 개체에서 http 헤더 및 기타 요청 메타데이터를 추출하지만, subscription인 경우 connection에서 메타데이터 추출
+      // * https://www.apollographql.com/docs/apollo-server/data/subscriptions/#operation-context
+      context: ({ req, connection }) => {
+        // * websocket 사용을 위해 connection을 넣어준다.
+        // * websocket에는 request가 없기 때문에 subscription 사용할 때 에러 발생
+        // * http - request //// websocket - connection
+        // * canActivate에서 ExecutionContext를 통해 해당 값들 확인 가능
+        const TOKEN_KEY = 'x-jwt';
+
+        // * http 통신을 하는 경우 vs 웹소켓 통신을 하는 경우
+        return {
+          token: req ? req.headers[TOKEN_KEY] : connection.context[TOKEN_KEY],
+        };
+      },
     }),
 
     JwtModule.forRoot({
@@ -114,12 +130,26 @@ import { OrderItem } from './orders/entity/order-item.entity';
     UsersModule,
     RestaurantsModule,
     OrdersModule,
+    CommonModule,
   ], // == new ApolloServer({기타 설정})
   controllers: [],
   providers: [],
 })
 
+/**
+ * * request 처리 순서: middleware -> guard -> interceptor -> pipe
+ * * Middleware: 여기에서 req에 user를 넣어준다.
+ * * GraphQLContext: GraphQL의 Context는 매 request마다 호출된다. 여기에서 req의 user를 context에 넣어준다.
+ * * Guard: 만들어둔 AuthGuard를 통해 request가 통과되고 여기에서 role에 따라 다음 단계 진행
+ * * 이 후 만들어둔 @AuthUser() 데코레이터를 통해 user 객체만 남아 넘어가고 처리후 return 된다.
+ * *
+ */
+
+// * JwtMiddleware로는 subscription의 토큰을 처리할 수 없다.
+export class AppModule {}
+
 // * 함수형 Middleware의 경우 main.ts에서도 구현 가능
+/*
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     // * MiddlewareConfigProxy.forRoutes([정확히 어떤 routes에 지정할지 설정])
@@ -135,3 +165,4 @@ export class AppModule implements NestModule {
     // * });
   }
 }
+*/

@@ -12,6 +12,7 @@ export const AuthUser = createParamDecorator(
     // * AuthGuard에서 graphQL context 보내주는거 아니고, 더 진행할지 말지 boolean만 보내니까
     // * 여기서 다시 user객체 쓰고 싶으면 처리 필요
     const gqlContext = GqlExecutionContext.create(context).getContext();
+    console.log('AuthUser: ', gqlContext);
     const user = gqlContext['user'];
     return user;
   },
