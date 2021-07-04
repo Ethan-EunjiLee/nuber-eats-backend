@@ -10,8 +10,14 @@ import { Dish } from '../restaurant/entities/dish.entity';
 import { GetOrdersInput, GetOrdersOutput } from './dtos/get-orders.dto';
 import { GetOrderInput, GetOrderOutput } from './dtos/get-order.dto';
 import { EditOrderInput, EditOrderOutput } from './dtos/edit-order.dto';
-import { NEW_PENDING_ORDER, PUB_SUB } from '../common/common.constants';
+import {
+  NEW_COOKED_ORDER,
+  NEW_ORDER_UPDATE,
+  NEW_PENDING_ORDER,
+  PUB_SUB,
+} from '../common/common.constants';
 import { PubSub } from 'graphql-subscriptions';
+import { TakeOrderInput, TakeOrderOutput } from './dtos/take-order.dto';
 
 @Injectable()
 export class OrderService {
@@ -146,6 +152,8 @@ export class OrderService {
             customer: user,
             ...(status && { status }), // * status가 있는 경우만 object에 추가
           },
+          // * 추가 정보가 보고 싶으면 relations를 이용해 값을 가져오자.
+          relations: ['customer'],
         });
         console.log('client');
       } else if (user.role === UserRole.Delivery) {
@@ -253,14 +261,16 @@ export class OrderService {
       };
     }
   }
+
+  // * restaurant owner가 order의 status를 update할 때 사용
   async editOrder(
     user: User,
     { id: orderId, status }: EditOrderInput, // * orderId alias로 활용
   ): Promise<EditOrderOutput> {
     try {
-      const order = await this.orders.findOne(orderId, {
-        relations: ['restaurant'],
-      });
+      // * 이전에는 relations에다가 값을 추가하여 같이 load할 entity를 적어주어야 했다.
+      // * 하지만 이제는 entity에 eager:true 속성을 줬기 때문에 따로 명시하지 않아도 customer(USER), driver(USER), restaurant, items(OrderItem[])이 같이 load된다.
+      const order = await this.orders.findOne(orderId);
       // * 해당 주문이 있는지 체크
       if (!order) {
         return {
@@ -302,7 +312,30 @@ export class OrderService {
           error: 'You cannot do that',
         };
       }
-      await this.orders.save([{ id: orderId, status }]);
+      // * entity를 update 한 경우, entity 전체를 return 하지 않고 update된 값만을 return 한다.
+      // * 즉, save후 return 값에는 order의 전반적인 relation에 대한 값들이 없다.
+      await this.orders.save({ id: orderId, status });
+
+      const newOrder = { ...order, status };
+
+      // * 주문의 status가 무사히 변경된 경우 trigger를 publish(Owner)
+      // * ===> 배달원이 요리가 완성되었는지 확인 가능
+      // * ===> Cooked가 되었을 때 Delivery에게만 trigger 전달
+      if (user.role === UserRole.Owner) {
+        if (status === OrderStatus.Cooked) {
+          // * publish할 때, payload는 resolver의 이름으로 줘야 한다.
+          await this.pubSub.publish(NEW_COOKED_ORDER, {
+            // * order 객체에 있는 각 값들을 분리한 후 status만 새로 엎어쓴 후 cookedOrders로 보낸다.
+            cookedOrders: newOrder,
+          });
+        }
+      }
+
+      // * 음식 준비 상태 업데이트 되면 Owner, Delviery, Customer 모두 이 알림을 받는다.
+      await this.pubSub.publish(NEW_ORDER_UPDATE, {
+        orderUpdates: newOrder,
+      });
+
       return {
         ok: true,
       };
@@ -310,6 +343,49 @@ export class OrderService {
       return {
         ok: false,
         error: 'Could not edit',
+      };
+    }
+  }
+
+  async takeOrder(
+    driver: User,
+    { id: orderId }: TakeOrderInput,
+  ): Promise<TakeOrderOutput> {
+    try {
+      // * orderId 일치하는 order 값 가져오기
+      const order = await this.orders.findOne(orderId);
+      // * 일치하는 order가 없는 경우
+      if (!order) {
+        return {
+          ok: false,
+          error: 'Order not found',
+        };
+      }
+      // * 이미 drvier가 있는 경우
+      if (order.driver) {
+        return {
+          ok: false,
+          error: 'This order already has a drvier',
+        };
+      }
+      // * 드라이버 설정
+      // * save내부에 [] 배열로 설정해주면 자동완성이 지원되는데, 아닌 경우 직접 입력해야 하더라.... 니꼬.
+      // * 근데... 나는 이러나 저러나 잘 되네 ^^
+      await this.orders.save({
+        id: orderId,
+        driver,
+      });
+      await this.pubSub.publish(NEW_ORDER_UPDATE, {
+        orderUpdates: { ...order, driver },
+      });
+      return {
+        ok: true,
+      };
+    } catch (error) {
+      console.log('error: ', error);
+      return {
+        ok: false,
+        error: 'Could not update order',
       };
     }
   }
