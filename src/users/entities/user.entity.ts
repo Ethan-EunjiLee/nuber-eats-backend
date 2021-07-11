@@ -11,6 +11,7 @@ import { InternalServerErrorException } from '@nestjs/common';
 import { IsBoolean, IsEmail, IsEnum } from 'class-validator';
 import { Restaurant } from '../../restaurant/entities/restaurant.entity';
 import { Order } from '../../orders/entity/order.entity';
+import { Payment } from '../../payments/entities/payment.entity';
 
 /**
  * * type으로 설정된 UserRole을 enum으로 변경
@@ -73,6 +74,17 @@ export class User extends CoreEntity {
   @Field((type) => [Order])
   @OneToMany(() => Order, (order) => order.customer)
   orders: Order[];
+
+  // * 배달 시킨 유저가 보는 Payment Entity
+  // * 1명의 user는 여러 Payment를 가질 수 있기 때문에 OneToMany
+  @Field((type) => [Payment])
+  @OneToMany(
+    () => Payment,
+    (payment) => payment.user,
+    // *   { eager: true,} => 여기에 eager: true를 넣으면 user load하면 자동으로 payment도 로드된다.
+    // * eager relationship은 pagination을 할 수 없다.
+  )
+  payments: Payment[];
 
   // * 배달원 유저가 보는 Order Entity
   // * 1명의 delivery user는 여러 order를 가질 수 있기 때문에 OneToMany
