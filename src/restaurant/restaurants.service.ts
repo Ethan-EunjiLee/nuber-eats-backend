@@ -220,8 +220,12 @@ export class RestaurantService {
           error: 'Category not found',
         };
       }
+      // * 홍보 레스토랑 우선 출력을 위해 order 옵션 추가
       const restaurants = await this.restaurants.find({
         where: { category },
+        order: {
+          isPromoted: 'DESC', // * 광고 상품 먼저 보여준다.(광고 상품 먼저 내림차순 정렬)
+        },
         take: 25, // * 한번에 보여줄 개수
         skip: (page - 1) * 25, // * 이전 페이지는 스킵(안보여줘도 된다),
       });
@@ -244,9 +248,13 @@ export class RestaurantService {
   async allRestaurants({ page }: RestaurantsInput): Promise<RestaurantsOutput> {
     try {
       // * findAndCount: 조건에 맞는 객체들, 조건에 상관없이 전체 개수 리턴
+      // * promote 한 restaurant 먼저 출력 필요
       const [restaurants, totalResults] = await this.restaurants.findAndCount({
         skip: (page - 1) * 25,
         take: 25,
+        order: {
+          isPromoted: 'DESC', // * 광고 상품 먼저 보여준다.(광고 상품 먼저 내림차순 정렬)
+        },
         relations: ['category', 'owner'], // * relation은 가져오고 싶으면 꼭, find할 때 지정을 해줘야한다. => 내부 객체의 relation을 끌어올 경우도 똑같이 입력해서 처리 가능
       });
       console.log('totalResults: ', totalResults);
