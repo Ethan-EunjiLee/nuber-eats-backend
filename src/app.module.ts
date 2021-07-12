@@ -11,7 +11,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import * as Joi from 'joi';
 import { UsersModule } from './users/users.module';
 import { User } from './users/entities/user.entity';
-import { JwtMiddleware } from './jwt/jwt.middleware';
 import { JwtModule } from './jwt/jwt.module';
 import { AuthModule } from './auth/auth.module';
 import { Verification } from './users/entities/verification.entity';
@@ -26,6 +25,7 @@ import { OrderItem } from './orders/entity/order-item.entity';
 import { CommonModule } from './common/common.module';
 import { PaymentsModule } from './payments/payments.module';
 import { Payment } from './payments/entities/payment.entity';
+import { ScheduleModule } from '@nestjs/schedule';
 // * typescript 패키지 import 방식
 // * import Joi from 'joi';
 // * javscript로 작성된 패키지를 typescript 방식으로 import하면 undefined로 나온다.
@@ -128,6 +128,8 @@ import { Payment } from './payments/entities/payment.entity';
       emailDomain: process.env.MAILGUN_DOMAIN_NAME,
       fromEmail: process.env.MAILGUN_FROM_EMAIL,
     }),
+    ScheduleModule.forRoot(),
+
     AuthModule, // * APP_GUARD 설정되어 있음
     // RestaurantsModule, => 테스트용
     UsersModule,

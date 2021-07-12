@@ -9,6 +9,7 @@ import {
 } from './dtos/create-payment.dto';
 import { Restaurant } from '../restaurant/entities/restaurant.entity';
 import { GetPaymentsOutput } from './dtos/get-payments.dto';
+import { Cron, Interval, SchedulerRegistry, Timeout } from '@nestjs/schedule';
 
 @Injectable()
 export class PaymentService {
@@ -17,6 +18,8 @@ export class PaymentService {
     private readonly payments: Repository<Payment>,
     @InjectRepository(Restaurant)
     private readonly restaurants: Repository<Restaurant>,
+    // * cron job => dynamic 방식으로 cron job 사용 가능
+    private schedulerRegistry: SchedulerRegistry,
   ) {}
 
   async createPayment(
@@ -76,5 +79,24 @@ export class PaymentService {
         error: 'Could not load payments',
       };
     }
+  }
+
+  // * Task Scheduleing(Cron)
+  @Cron('30 * * * * *', { name: 'myJob' }) // * 매 30초마다(30초 간격 X, 초침이 30초를 가리킬때)
+  async checkForPayments() {
+    console.log('check for payments... cron');
+    const job = this.schedulerRegistry.getCronJob('myJob');
+    job.stop();
+  }
+
+  // * Task Scheduleing(Interval)
+  @Interval(5000) // * 매 30초마다
+  async checkForPaymentsI() {
+    console.log('check for payments... Interval');
+  }
+
+  @Timeout(20000) // * 앱 실행 후 20초가 지나면 딱 1번만 실행
+  afterStarts() {
+    console.log('Congrats!');
   }
 }
